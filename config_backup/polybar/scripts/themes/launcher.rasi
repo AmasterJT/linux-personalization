@@ -1,0 +1,181 @@
+configuration {
+    font:                           "Iosevka Nerd Font bold 10";
+    show-icons:                     true;
+	icon-theme: 					"Papirus";
+    display-drun: 					"";
+    drun-display-format:            " {name}";
+    threads:                        0;
+    scroll-method:                  0;
+    disable-history:                false;
+    fullscreen:                     false;
+	hide-scrollbar: 				true;
+	sidebar-mode: 					false;
+    location:                       1;
+}
+
+
+* {
+    orange:                      rgba ( 241, 110, 68, 100 % );
+    orange-light:                rgba ( 248, 130, 92, 100 % );
+    purple:                      rgba ( 142, 36, 170, 100 % );
+    purple-light:                rgba ( 195, 155, 211, 100 % );
+    black:                       rgba ( 13, 16, 23, 100 % );
+    blue:                        rgba ( 38, 139, 210, 100 % );
+    red:                         rgba ( 220, 50, 47, 100 % );
+    gray-light:                  rgba ( 178, 171, 181, 50 % );
+    white: rgba ( 255, 255, 255, 100 % ); 
+
+    foreground:                  rgba ( 196, 203, 212, 100 % );
+    background:                  rgba ( 45, 48, 59, 95 % );
+    
+    //foreground: @black;
+    //background: @orange;
+    
+    selected-normal-foreground:  rgba ( 249, 249, 249, 100 % );
+    selected-urgent-foreground:  rgba ( 249, 249, 249, 100 % );
+    selected-active-foreground:  rgba ( 249, 249, 249, 100 % );
+    selected-normal-background:  rgba ( 64, 132, 214, 100 % );
+    selected-urgent-background:  rgba ( 165, 66, 66, 100 % );
+    selected-active-background:  rgba ( 68, 145, 237, 100 % );
+    
+    alternate-normal-foreground: @background-alt;
+    alternate-urgent-foreground: @urgent-foreground;
+    alternate-active-foreground: @active-foreground;
+    alternate-normal-background: rgba ( 64, 69, 82, 59 % );
+    alternate-urgent-background: rgba ( 75, 81, 96, 90 % );
+    alternate-active-background: rgba ( 75, 81, 96, 89 % );
+    
+    normal-foreground:           @foreground;
+    urgent-foreground:           rgba ( 204, 102, 102, 100 % );
+    active-foreground:           rgba ( 101, 172, 255, 100 % );
+    normal-background:           @background;
+    urgent-background:           rgba ( 29, 31, 33, 17 % );
+    active-background:           rgba ( 29, 31, 33, 17 % );
+    
+    lightbg:                     rgba ( 238, 232, 213, 100 % );
+    lightfg:                     rgba ( 88, 104, 117, 100 % );
+    border-color:                rgba ( 124, 131, 137, 100 % );
+    spacing:                     2;
+    separatorcolor:              rgba ( 29, 31, 33, 100 % );
+    background-color:            rgba ( 0, 0, 0, 0 % );
+
+}
+
+window {
+    transparency:                   "real";
+    background-color:               @background;
+    text-color:                     @foreground;
+    border-radius:                  10px;
+    height:                         34%;
+    width:                          17%;
+    x-offset:                       0.35%;
+    y-offset:                       56px;
+    border:                  		3;
+    border-color:                  	@orange;
+}
+
+prompt {
+    enabled: 						true;
+	padding: 						4px 4px 6px 12px;
+	background-color: 				@background;
+	text-color: 					@purple;
+}
+
+inputbar {
+	children: 						[ prompt, entry ];
+    background-color:               @background;
+    text-color:                     @foreground;
+    expand:                         false;
+    border:                  		0px 0px 2px 0px;
+    border-radius:                  10px;
+    border-color:                  	@purple;
+    margin:                         0px 0px 0px 0px;
+    padding:                        0px 0px 0px 0px;
+    position:                       center;
+}
+
+
+entry {
+    background-color:               @background;
+    text-color:                     @foreground;
+    placeholder-color:              @purple-light;
+    expand:                         true;
+    horizontal-align:               0;
+    placeholder:                    "Search";
+    blink:                          true;
+    padding:                        5px 0px 0px 0px;
+}
+
+case-indicator {
+    background-color:               @background;
+    text-color:                     @foreground;
+    spacing:                        0;
+}
+
+
+listview {
+    background-color:               @background;
+    columns:                        1;
+    spacing:                        4px;
+    cycle:                          false;
+    dynamic:                        true;
+    layout:                         vertical;
+}
+
+mainbox {
+    background-color:               @background;
+    children:                       [ inputbar, listview ];
+    spacing:                       	5px;
+    padding:                        5px 5px 5px 5px;
+}
+
+element {
+    background-color:               @background;
+    text-color:                     @white;
+    orientation:                    horizontal;
+    border-radius:                  2px;
+    padding:                        6px 6px 6px 6px;
+}
+
+element-icon {
+    size:                           24px;
+    border:                         0px;
+}
+
+element-text {
+    expand:                         true;
+    horizontal-align:               0;
+    vertical-align:                 0;
+    margin:                         2px 0px 2px 2px;
+    text-color:                     @white;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color:               @urgent;
+    text-color:                     @origin-background;
+    border-radius:                  9px;
+}
+
+element normal.active,
+element alternate.active {
+    background-color:               @orange;
+    text-color:                     @white;
+}
+
+element selected {
+    background-color:               @orange;
+    text-color:                     @black;
+    border:                  		0px;
+    border-radius:                  2px;
+}
+
+element selected.urgent {
+    background-color:               @urgent;
+    text-color:                     @white;
+}
+
+element selected.active {
+    background-color:               @background-alt;
+    color:                          @foreground;
+}

@@ -1,0 +1,23 @@
+/* Color-Scheme For All Themes*/
+
+* {
+    background:    #ffffffff;
+    background-alt:    #ffffffff;
+    foreground:    #606060ff;
+    border:    #5895DCff;
+    selected:    #5895DCff;
+    urgent:    #EC407Aff;
+	logo:    #EC407Aff;
+	on:    #61C766ff;
+	off:    #EC7875ff;
+
+
+     orange:                      rgba ( 241, 110, 68, 100 % );
+    orange-light:                rgba ( 248, 130, 92, 100 % );
+    purple:                      rgba ( 142, 36, 170, 100 % );
+    purple-light:                rgba ( 195, 155, 211, 100 % );
+    black:                       rgba ( 13, 16, 23, 100 % );
+    blue:                        rgba ( 38, 139, 210, 100 % );
+    red:                         rgba ( 220, 50, 47, 100 % );
+    gray-light:                  rgba ( 178, 171, 181, 50 % );
+}

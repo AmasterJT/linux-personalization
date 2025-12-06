@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Nombre del monitor polybar
+POLYBAR_MONITOR="Virtual1"
+
+# Función para ocultar la polybar
+hide_polybar() {
+    polybar-msg cmd hide
+}
+
+# Función para mostrar la polybar
+show_polybar() {
+    polybar-msg cmd show
+}
+
+# Bucle infinito para comprobar ventanas en pantalla completa
+while true; do
+    # Obtener la ID de la ventana en foco
+    WINDOW_ID=$(xdotool getactivewindow)
+
+    # Obtener el estado de la ventana
+    WINDOW_STATE=$(xprop -id $WINDOW_ID | grep "_NET_WM_STATE_FULLSCREEN")
+
+    # Si la ventana está en pantalla completa, oculta la polybar
+    if [ -n "$WINDOW_STATE" ]; then
+        hide_polybar
+    else
+        show_polybar
+    fi
+
+    # Esperar un segundo antes de comprobar de nuevo
+    sleep 1
+done
+

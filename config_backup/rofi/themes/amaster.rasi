@@ -1,0 +1,201 @@
+/************************************************
+ * ROFI Color theme
+ * User: amaster
+ * Copyright: 2024 amaster
+ ***********************************************/
+
+configuration {
+    font: "Hack Nerd Font 12";
+    show-icons: true;
+    icon-theme: "Papirus";
+}
+
+* {
+    orange:                      rgba ( 241, 110, 68, 100 % );
+    orange-light:                rgba ( 248, 130, 92, 100 % );
+    purple:                      rgba ( 142, 36, 170, 100 % );
+    purple-light:                rgba ( 195, 155, 211, 100 % );
+    black:                       rgba ( 13, 16, 23, 100 % );
+    blue:                        rgba ( 38, 139, 210, 100 % );
+    red:                         rgba ( 220, 50, 47, 100 % );
+    gray-light:                  rgba ( 178, 171, 181, 50 % );
+
+    foreground:                  rgba ( 196, 203, 212, 100 % );
+    background:                  rgba ( 23, 26, 33, 100 % );
+    background-color:            rgba ( 0, 0, 0, 0 % );
+    
+    selected-normal-foreground:  @black;
+    selected-urgent-foreground:  rgba ( 249, 249, 249, 100 % );
+    selected-active-foreground:  rgba ( 249, 249, 249, 100 % );
+    selected-normal-background:  @orange;
+    selected-urgent-background:  rgba ( 165, 66, 66, 100 % );
+    selected-active-background:  rgba ( 68, 145, 237, 100 % );
+    
+    alternate-normal-background: rgba ( 44, 49, 62, 100 % );
+    alternate-urgent-background: rgba ( 75, 81, 96, 90 % );
+    alternate-active-background: rgba ( 75, 81, 96, 89 % );
+    alternate-normal-foreground: @foreground;
+    alternate-urgent-foreground: @urgent-foreground;
+    alternate-active-foreground: @active-foreground;
+    
+    border-color:                @orange;
+    separatorcolor:              @purple;
+    spacing:                     2;
+    
+    active-foreground:           rgba ( 101, 172, 255, 100 % );
+    active-background:           rgba ( 29, 31, 33, 17 % );
+     
+    normal-foreground:           @foreground;
+    normal-background:           @background;
+    
+    urgent-foreground:           rgba ( 204, 102, 102, 100 % );
+    urgent-background:           rgba ( 29, 31, 33, 17 % );
+    
+    lightbg:                     rgba ( 238, 232, 213, 100 % );
+    lightfg:                     rgba ( 88, 104, 117, 100 % );
+}
+
+
+window {
+    background-color: @background;
+    border:           3;
+    border-radius: 10px;
+    padding:          5;
+
+    height:  200px;
+    width: 600px;
+}
+mainbox {
+    border:  0;
+    padding: 2;
+}
+message {
+    border:       2px 0px 0px ;
+    border-color: @separatorcolor;
+    padding:      1px ;
+}
+textbox {
+    text-color: @foreground;
+}
+listview {
+    fixed-height: 0;
+    border:       2px 0px 0px ;
+    border-color: @separatorcolor;
+    spacing:      2px ;
+    scrollbar:    false;
+    padding:      3px 0px 0px 0px ;
+    dynamic: true;
+}
+
+
+element {
+    border:  0;
+    padding: 1px ;
+}
+element-text {
+    background-color: inherit;
+    text-color:       inherit;
+}
+element-icon {
+    size:                           20px;
+    border:                         0px;
+}
+element.normal.normal {
+    background-color: @normal-background;
+    text-color:       @normal-foreground;
+}
+element.normal.urgent {
+    background-color: @urgent-background;
+    text-color:       @urgent-foreground;
+}
+element.normal.active {
+    background-color: @active-background;
+    text-color:       @active-foreground;
+}
+element.selected.normal {
+
+    background-color: @selected-normal-background;
+    text-color:       @selected-normal-foreground;
+}
+element.selected.urgent {
+    background-color: @selected-urgent-background;
+    text-color:       @selected-urgent-foreground;
+}
+element.selected.active {
+    background-color: @selected-active-background;
+    text-color:       @selected-active-foreground;
+}
+element.alternate.normal {
+    background-color: @alternate-normal-background;
+    text-color:       @alternate-normal-foreground;
+}
+element.alternate.urgent {
+    background-color: @alternate-urgent-background;
+    text-color:       @alternate-urgent-foreground;
+}
+element.alternate.active {
+    background-color: @alternate-active-background;
+    text-color:       @alternate-active-foreground;
+}
+
+scrollbar {
+    width:        4px ;
+    border:       0;
+    handle-color: @normal-foreground;
+    handle-width: 8px ;
+    padding:      0;
+}
+mode-switcher {
+    border:       2px 0px 0px ;
+    border-color: @separatorcolor;
+}
+button {
+    spacing:    0;
+    text-color: @normal-foreground;
+}
+button.selected {
+    background-color: @selected-normal-background;
+    text-color:       @selected-normal-foreground;
+}
+inputbar {
+    spacing:    0;
+    text-color: @normal-foreground;
+    padding:    1px ;
+}
+case-indicator {
+    spacing:    0;
+    text-color: @normal-foreground;
+}
+entry {
+    spacing:    0;
+    text-color: @normal-foreground;
+}
+prompt {
+    enabled: true;
+    spacing:    0;
+    text-color: @orange;
+}
+
+textbox-prompt-colon {
+    expand:     false;
+    str:        "❯❯";
+    margin:     0px 0.3em 0em 0em ;
+    text-color: @purple;
+}
+
+entry {
+    background-color:               @background;
+    text-color:                     @foreground;
+    placeholder-color:              @gray-light;
+    expand:                         true;
+    horizontal-align:               0;
+    placeholder:                    "Search";
+    blink:                          true;
+ }
+
+inputbar {
+    //children:   [ prompt,textbox-prompt-colon,entry,case-indicator ];
+    children:   [ textbox-prompt-colon,entry,case-indicator ];
+} 
+
+

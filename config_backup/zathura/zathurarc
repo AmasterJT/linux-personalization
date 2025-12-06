@@ -1,0 +1,9 @@
+set adjust-open best-fit
+
+set smooth-scroll false
+
+map <Up> navigate previous
+map <Down> navigate next
+
+map <Left> navigate previous
+map <Right> navigate next

@@ -18,7 +18,7 @@ sudo apt install -y build-essential git vim xcb libxcb-util0-dev libxcb-ewmh-dev
 
 # Instalando Requerimientos para la polybar
 
-sudo apt install -y cmake cmake-data pkg-config python3-sphinx libcairo2-dev libxcb1-dev libxcb-util0-dev libxcb-randr0-dev libxcb-composite0-dev python3-xcbgen xcb-proto libxcb-image0-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev libasound2-dev libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev
+sudo apt install -y cmake cmake-data pkg-config python3-sphinx libcairo2-dev libxcb1-dev libxcb-util0-dev libxcb-randr0-dev libxcb-composite0-dev python3-xcbgen xcb-proto libxcb-image0-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev libasound2-dev libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev curl cava fastfetch
 
 # Dependencias de Picom
 
@@ -26,7 +26,7 @@ sudo apt install -y meson libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfix
 
 # Instalamos paquetes adionales
 
-sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger
+sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus
 
 # Creando carpeta de Reposistorios
 

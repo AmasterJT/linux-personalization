@@ -26,7 +26,7 @@ sudo apt install -y meson libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfix
 
 # Instalamos paquetes adionales
 
-sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus
+sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus pavucontrol
 
 # Creando carpeta de Reposistorios
 

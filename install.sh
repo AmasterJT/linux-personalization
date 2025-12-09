@@ -82,7 +82,10 @@ sudo cp -v $ruta/fonts/HNF/* /usr/local/share/fonts/
 
 sudo cp -v $ruta/Config/polybar/fonts/* /usr/share/fonts/truetype/
 
-# Instalando Wallpaper de S4vitar
+mkdir /usr/share/nano
+sudo cp -rv nanorc/* /usr/share/nano/
+
+# Instalando Wallpaper
 
 mkdir ~/Wallpaper
 cp -v $ruta/Wallpaper/* ~/Wallpaper

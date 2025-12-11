@@ -18,7 +18,7 @@ sudo apt install -y build-essential git vim xcb libxcb-util0-dev libxcb-ewmh-dev
 
 # Instalando Requerimientos para la polybar
 
-sudo apt install -y cmake cmake-data pkg-config python3-sphinx libcairo2-dev libxcb1-dev libxcb-util0-dev libxcb-randr0-dev libxcb-composite0-dev python3-xcbgen xcb-proto libxcb-image0-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev libasound2-dev libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev curl cava fastfetch
+sudo apt install -y cmake cmake-data pkg-config python3-sphinx libcairo2-dev libxcb1-dev libxcb-util0-dev libxcb-randr0-dev libxcb-composite0-dev python3-xcbgen xcb-proto libxcb-image0-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev libasound2-dev libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev curl cava
 
 # Dependencias de Picom
 
@@ -129,20 +129,12 @@ sudo ln -s -fv ~/.zshrc /root/.zshrc
 
 chmod +x ~/.config/bspwm/bspwmrc
 chmod +x ~/.config/bspwm/scripts/bspwm_resize
-chmod +x ~/.config/bin/ethernet_status.sh
-chmod +x ~/.config/bin/htb_status.sh
-chmod +x ~/.config/bin/htb_target.sh
+chmod +x ~/.config/zsh/funtions.zsh
+chmod +x ~/.config/zsh/clipboard.zsh
+chmod +x ~/.config/zsh/my_zsh_functions.zsh
 chmod +x ~/.config/polybar/launch.sh
-sudo chmod +x /usr/local/bin/whichSystem.py
 
-# Configuramos el Tema de Rofi
 
-rofi-theme-selector
-
-# Removiendo Repositorio
-
-rm -rf ~/github
-rm -rf $ruta
 
 # Mensaje de Instalado
 

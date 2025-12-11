@@ -26,7 +26,7 @@ sudo apt install -y meson libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfix
 
 # Instalamos paquetes adionales
 
-sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus pavucontrol
+sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus pavucontrol lsb
 
 # Creando carpeta de Reposistorios
 
@@ -46,6 +46,13 @@ cd build
 cmake ..
 make -j$(nproc)
 sudo make install
+
+#instalamos zscroll
+
+cd ~/github
+git clone https://github.com/noctuid/zscroll
+cd zscroll
+sudo python3 setup.py install
 
 # Instalando Picom
 
@@ -70,13 +77,10 @@ mkdir -p ~/.config/rofi/themes
 cp $ruta/rofi/* ~/.config/rofi/themes/
 cp $ruta/rofi/template ~/.config/rofi/themes/.
 
-# Instando lsd
-
-sudo dpkg -i $ruta/lsd.deb
 
 # Instalamos las HackNerdFonts
 
-sudo cp -v $ruta/fonts/HNF/* /usr/local/share/fonts/
+sudo cp -v $ruta/fonts/* /usr/local/share/fonts/
 
 # Instalando Fuentes de Polybar
 
@@ -108,13 +112,12 @@ cp -v $ruta/.zshrc ~/.zshrc
 cp -v $ruta/.p10k.zsh ~/.p10k.zsh
 sudo cp -v $ruta/.p10k.zsh-root /root/.p10k.zsh
 
-# Script
-
-sudo cp -v $ruta/scripts/whichSystem.py /usr/local/bin/
+cd ~/.config/polybar/scripts
+git clone https://github.com/PrayagS/polybar-spotify.git
 
 # Plugins ZSH
 
-sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions zsh-autocomplete
+sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions zsh-autocomplete web-search.plugin.zsh
 sudo mkdir /usr/share/zsh-sudo
 cd /usr/share/zsh-sudo
 sudo wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/sudo/sudo.plugin.zsh

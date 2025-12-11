@@ -28,6 +28,10 @@ sudo apt install -y meson libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfix
 
 sudo apt install -y feh flameshot scrub zsh rofi xclip bat locate wmname acpi bspwm sxhkd imagemagick ranger caja nautilus pavucontrol lsb
 
+# Instalando Alacritty
+
+sudo apt install -y alacritty
+
 # Creando carpeta de Reposistorios
 
 mkdir ~/github
@@ -76,7 +80,6 @@ sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/.pow
 mkdir -p ~/.config/rofi/themes
 cp $ruta/rofi/* ~/.config/rofi/themes/
 cp $ruta/rofi/template ~/.config/rofi/themes/.
-
 
 # Instalamos las HackNerdFonts
 
@@ -136,8 +139,6 @@ chmod +x ~/.config/zsh/funtions.zsh
 chmod +x ~/.config/zsh/clipboard.zsh
 chmod +x ~/.config/zsh/my_zsh_functions.zsh
 chmod +x ~/.config/polybar/launch.sh
-
-
 
 # Mensaje de Instalado
 

@@ -10,7 +10,7 @@ set -e
 # Obtener la ruta real del script independientemente de dónde se ejecute
 RUTA="$(dirname "$(readlink -f "$0")")"
 
-# Función para manejo de errores
+# Funcion para manejo de errores
 error_exit() {
     echo -e "\n[ERROR] Ocurrió un error en la línea $1. Saliendo..."
     exit 1
@@ -18,7 +18,7 @@ error_exit() {
 
 trap 'error_exit $LINENO' ERR
 
-# Función para ejecutar comandos con trazas (se quita redirección total para ver sudo)
+# Funcio para ejecutar comandos con trazas (se quita redirección total para ver sudo)
 run_step() {
     echo -e "\n[INFO] $1..."
     shift
@@ -28,7 +28,7 @@ run_step() {
 }
 
 # -------------------------------
-# Comprobación de usuario
+# Comprobacion de usuario
 # -------------------------------
 if [ "$EUID" -eq 0 ]; then
     echo "[ERROR] No ejecutes este script como root. Usa tu usuario normal."
@@ -36,7 +36,7 @@ if [ "$EUID" -eq 0 ]; then
 fi
 
 # -------------------------------
-# Actualización del sistema
+# Actualizacion del sistema
 # -------------------------------
 run_step "Actualizando sistema" sudo apt update
 run_step "Actualizando paquetes" sudo apt full-upgrade -y
@@ -57,7 +57,7 @@ DEP_GENERALES=(
     libxcb-render-util0-dev libxcb-render0-dev libxcb-present-dev
     libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev
     libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev
-    libpcre3 libpcre3-dev ninja-build curl cava
+    libpcre3-dev libpcre2-dev ninja-build curl cava
 )
 
 run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"
@@ -77,30 +77,30 @@ cd ~/github
 
 # Polybar
 if [ ! -d "polybar" ]; then
-    run_step "Clonando Polybar" git clone --recursive https://github.com
+    run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar
 fi
 run_step "Compilando Polybar" bash -c "cd polybar && mkdir -p build && cd build && cmake .. && make -j\$(nproc) && sudo make install"
 
 # Picom (ibhagwan)
 if [ ! -d "picom" ]; then
-    run_step "Clonando Picom" git clone https://github.com
+    run_step "Clonando Picom" git clone https://github.com/ibhagwan/picom.git
 fi
 run_step "Compilando Picom" bash -c "cd picom && git submodule update --init --recursive && meson --buildtype=release . build && ninja -C build && sudo ninja -C build install"
 
 # zscroll
 if [ ! -d "zscroll" ]; then
-    run_step "Clonando zscroll" git clone https://github.com
+    run_step "Clonando zscroll" git clone https://github.com/noctuid/zscroll
 fi
 run_step "Instalando zscroll" bash -c "cd zscroll && sudo python3 setup.py install"
 
 # -------------------------------
 # Instalando Powerlevel10k
 # -------------------------------
-[ -d ~/.powerlevel10k ] || git clone --depth=1 https://github.com ~/.powerlevel10k
-sudo [ -d /root/.powerlevel10k ] || sudo git clone --depth=1 https://github.com /root/.powerlevel10k
+[ -d ~/.powerlevel10k ] || git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.powerlevel10k
+sudo [ -d /root/.powerlevel10k ] || sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/.powerlevel10k
 
 # -------------------------------
-# Configuración y Fuentes
+# Configuracin y Fuentes
 # -------------------------------
 # Copiar fuentes (comprueba si la carpeta existe primero)
 if [ -d "$RUTA/fonts" ]; then
@@ -113,15 +113,17 @@ if [ -d "$RUTA/fonts" ]; then
 fi
 
 # -------------------------------
-# Copiando carpetas de Configuración
+# Copiando carpetas de Configuracin
 # -------------------------------
 for dir in "$RUTA"/Config/*; do
     [ -d "$dir" ] || continue
     name=$(basename "$dir")
     rm -rf ~/.config/"$name"
     cp -rv "$dir" ~/.config/
-    echo "[OK] Configuración de $name copiada."
+    echo "[OK] Configuracion de $name copiada."
 done
+
+
 
 # Caso especial Root (solo si existen)
 [ -d "$RUTA/Config/kitty" ] && sudo cp -rv "$RUTA/Config/kitty" /root/.config/
@@ -133,6 +135,9 @@ done
 mkdir -p ~/Wallpaper ~/ScreenShots
 [ -d "$RUTA/Wallpaper" ] && cp -v "$RUTA"/Wallpaper/* ~/Wallpaper/
 
+#Nano Config
+cp -v "$RUTA/.nanorc" ~/.nanorc 2>/dev/null || echo "[WARN] .nanorc no encontrado en repo"
+
 # Zsh Config
 cp -v "$RUTA/.zshrc" ~/.zshrc 2>/dev/null || echo "[WARN] .zshrc no encontrado en repo"
 cp -v "$RUTA/.p10k.zsh" ~/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh no encontrado en repo"
@@ -141,7 +146,12 @@ sudo cp -v "$RUTA/.p10k.zsh-root" /root/.p10k.zsh 2>/dev/null || echo "[WARN] .p
 # Plugins Zsh
 run_step "Instalando plugins Zsh" sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions
 sudo mkdir -p /usr/share/zsh-sudo
-sudo wget -q -O /usr/share/zsh-sudo/sudo.plugin.zsh https://githubusercontent.com
+sudo wget -q -O /usr/share/zsh-sudo/sudo.plugin.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/plugins/sudo/sudo.plugin.zsh
+sudo chmod +x /usr/share/zsh-sudo/sudo.plugin.zsh
+
+sudo mkdir -p /usr/share/zsh-web-search
+sudo wget -q -O  /usr/share/zsh-web-search/web-search.plugin.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/plugins/web-search/web-search.plugin.zsh
+sudo chmod +x /usr/share/zsh-web-search/web-search.plugin.zsh
 
 # -------------------------------
 # Permisos y Shell

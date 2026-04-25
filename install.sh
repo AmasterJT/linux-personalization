@@ -1,216 +1,157 @@
 #!/bin/bash
 
 # -------------------------------
-# BSPWM Installer Mejorado
+# BSPWM Installer Pro - Fix Edition
 # -------------------------------
 
 # Salir al primer error
 set -e
 
+# Obtener la ruta real del script independientemente de dónde se ejecute
+RUTA="$(dirname "$(readlink -f "$0")")"
+
 # Función para manejo de errores
 error_exit() {
-    echo "[ERROR] Ocurrió un error en la línea $1. Saliendo..."
-    notify-send "BSPWM INSTALLER" "Ocurrió un error. Revisa el terminal."
+    echo -e "\n[ERROR] Ocurrió un error en la línea $1. Saliendo..."
     exit 1
 }
 
-# Captura errores
 trap 'error_exit $LINENO' ERR
 
-# Función para ejecutar comandos con trazas
+# Función para ejecutar comandos con trazas (se quita redirección total para ver sudo)
 run_step() {
     echo -e "\n[INFO] $1..."
     shift
-    "$@" >/dev/null 2>&1
-    echo "[OK] $1 completado."
+    # Permitimos ver errores de comandos críticos como instalaciones y compilaciones
+    "$@"
+    echo "[OK] Paso completado."
 }
 
 # -------------------------------
 # Comprobación de usuario
 # -------------------------------
-if [ "$(whoami)" == "root" ]; then
-    echo "[ERROR] No ejecutes este script como root."
+if [ "$EUID" -eq 0 ]; then
+    echo "[ERROR] No ejecutes este script como root. Usa tu usuario normal."
     exit 1
 fi
-
-ruta=$(pwd)
 
 # -------------------------------
 # Actualización del sistema
 # -------------------------------
 run_step "Actualizando sistema" sudo apt update
-run_step "Actualizando paquetes" sudo parrot-upgrade -y
+run_step "Actualizando paquetes" sudo apt full-upgrade -y
 
 # -------------------------------
-# Instalando dependencias
+# Instalando todas las dependencias
 # -------------------------------
-DEPENDENCIAS_ENTORNO=(
+# He unificado listas y añadido ninja-build para picom
+DEP_GENERALES=(
     build-essential git vim xcb libxcb-util0-dev libxcb-ewmh-dev
     libxcb-randr0-dev libxcb-icccm4-dev libxcb-keysyms1-dev
     libxcb-xinerama0-dev libasound2-dev libxcb-xtest0-dev libxcb-shape0-dev
-)
-
-run_step "Instalando dependencias de entorno" sudo apt install -y "${DEPENDENCIAS_ENTORNO[@]}"
-
-DEPENDENCIAS_POLYBAR=(
     cmake cmake-data pkg-config python3-sphinx libcairo2-dev
-    libxcb1-dev libxcb-util0-dev libxcb-randr0-dev libxcb-composite0-dev python3-xcbgen
-    xcb-proto libxcb-image0-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev
-    libxcb-xrm-dev libxcb-cursor-dev libasound2-dev libpulse-dev libjsoncpp-dev
-    libmpdclient-dev libuv1-dev libnl-genl-3-dev curl cava
-)
-
-run_step "Instalando dependencias de Polybar" sudo apt install -y "${DEPENDENCIAS_POLYBAR[@]}"
-
-DEPENDENCIAS_PICOM=(
-    meson libxext-dev libxcb1-dev libxcb-damage0-dev
-    libxcb-xfixes0-dev libxcb-shape0-dev libxcb-render-util0-dev libxcb-render0-dev
-    libxcb-composite0-dev libxcb-image0-dev libxcb-present-dev libxcb-xinerama0-dev
+    libxcb1-dev libxcb-composite0-dev python3-xcbgen xcb-proto
+    libxcb-image0-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev
+    libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev
+    meson libxext-dev libxcb-damage0-dev libxcb-xfixes0-dev
+    libxcb-render-util0-dev libxcb-render0-dev libxcb-present-dev
     libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev
-    libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev libpcre3 libpcre3-dev
+    libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev
+    libpcre3 libpcre3-dev ninja-build curl cava
 )
 
-run_step "Instalando dependencias de Picom" sudo apt install -y "${DEPENDENCIAS_PICOM[@]}"
+run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"
 
 PAQUETES_ADICIONALES=(
     feh flameshot scrub zsh rofi xclip bat locate wmname acpi
-    bspwm sxhkd imagemagick ranger caja nautilus pavucontrol lsb alacritty
+    bspwm sxhkd imagemagick ranger caja nautilus pavucontrol lsb-release alacritty
 )
 
 run_step "Instalando paquetes adicionales" sudo apt install -y "${PAQUETES_ADICIONALES[@]}"
 
 # -------------------------------
-# Crear repositorios
+# Clonando y compilando desde GitHub
 # -------------------------------
 mkdir -p ~/github
+cd ~/github
 
-# -------------------------------
-# Clonando repositorios
-# -------------------------------
-run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar ~/github/polybar
-run_step "Clonando Picom" git clone https://github.com/ibhagwan/picom.git ~/github/picom
-run_step "Clonando zscroll" git clone https://github.com/noctuid/zscroll ~/github/zscroll
+# Polybar
+if [ ! -d "polybar" ]; then
+    run_step "Clonando Polybar" git clone --recursive https://github.com
+fi
+run_step "Compilando Polybar" bash -c "cd polybar && mkdir -p build && cd build && cmake .. && make -j\$(nproc) && sudo make install"
 
-# -------------------------------
-# Instalando Polybar
-# -------------------------------
-run_step "Instalando Polybar" bash -c "
-cd ~/github/polybar
-mkdir -p build
-cd build
-cmake .. >/dev/null
-make -j\$(nproc) >/dev/null
-sudo make install >/dev/null
-"
+# Picom (ibhagwan)
+if [ ! -d "picom" ]; then
+    run_step "Clonando Picom" git clone https://github.com
+fi
+run_step "Compilando Picom" bash -c "cd picom && git submodule update --init --recursive && meson --buildtype=release . build && ninja -C build && sudo ninja -C build install"
 
-# -------------------------------
-# Instalando Picom
-# -------------------------------
-run_step "Instalando Picom" bash -c "
-cd ~/github/picom
-git submodule update --init --recursive >/dev/null
-meson --buildtype=release . build >/dev/null
-ninja -C build >/dev/null
-sudo ninja -C build install >/dev/null
-"
-
-# -------------------------------
-# Instalando zscroll
-# -------------------------------
-run_step "Instalando zscroll" bash -c "
-cd ~/github/zscroll
-sudo python3 setup.py install >/dev/null
-"
+# zscroll
+if [ ! -d "zscroll" ]; then
+    run_step "Clonando zscroll" git clone https://github.com
+fi
+run_step "Instalando zscroll" bash -c "cd zscroll && sudo python3 setup.py install"
 
 # -------------------------------
 # Instalando Powerlevel10k
 # -------------------------------
-run_step "Instalando Powerlevel10k" git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.powerlevel10k
-echo 'source ~/.powerlevel10k/powerlevel10k.zsh-theme' >>~/.zshrc
-sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/.powerlevel10k
+[ -d ~/.powerlevel10k ] || git clone --depth=1 https://github.com ~/.powerlevel10k
+sudo [ -d /root/.powerlevel10k ] || sudo git clone --depth=1 https://github.com /root/.powerlevel10k
 
 # -------------------------------
-# Copiando temas Rofi
+# Configuración y Fuentes
 # -------------------------------
-run_step "Copiando temas Rofi" mkdir -p ~/.config/rofi/themes
-cp -rv $ruta/Config/rofi/themes/* ~/.config/rofi/themes/
+# Copiar fuentes (comprueba si la carpeta existe primero)
+if [ -d "$RUTA/fonts" ]; then
+    run_step "Instalando fuentes" bash -c "
+    sudo mkdir -p /usr/share/fonts/truetype/custom
+    sudo cp -v $RUTA/fonts/* /usr/share/fonts/truetype/custom/
+    [ -d $RUTA/Config/polybar/fonts ] && sudo cp -v $RUTA/Config/polybar/fonts/* /usr/share/fonts/truetype/custom/
+    fc-cache -fv
+    "
+fi
 
 # -------------------------------
-# Instalando fuentes
+# Copiando carpetas de Configuración
 # -------------------------------
-run_step "Instalando fuentes" bash -c "
-sudo mkdir -p /usr/share/fonts/truetype/custom
-sudo cp -v $ruta/fonts/* /usr/share/fonts/truetype/custom/
-sudo cp -v $ruta/Config/polybar/fonts/* /usr/share/fonts/truetype/custom/
-fc-cache -fv >/dev/null
-"
-
-# -------------------------------
-# Instalando nanorc
-# -------------------------------
-run_step "Instalando nanorc" bash -c "
-sudo mkdir -p /usr/share/nano
-sudo cp -rv $ruta/nanorc/* /usr/share/nano/
-"
-
-# -------------------------------
-# Wallpaper y Screenshots
-# -------------------------------
-mkdir -p ~/Wallpaper ~/ScreenShots
-cp -v $ruta/Wallpaper/* ~/Wallpaper
-
-# -------------------------------
-# Copiando configuración
-# -------------------------------
-for dir in $ruta/Config/*; do
+for dir in "$RUTA"/Config/*; do
+    [ -d "$dir" ] || continue
     name=$(basename "$dir")
-    rm -rf ~/.config/$name
-    run_step "Copiando $name" cp -rv "$dir" ~/.config/
+    rm -rf ~/.config/"$name"
+    cp -rv "$dir" ~/.config/
+    echo "[OK] Configuración de $name copiada."
 done
 
-# -------------------------------
-# Kitty root
-# -------------------------------
-sudo cp -rv $ruta/Config/kitty /root/.config/
+# Caso especial Root (solo si existen)
+[ -d "$RUTA/Config/kitty" ] && sudo cp -rv "$RUTA/Config/kitty" /root/.config/
+[ -d "$RUTA/nanorc" ] && sudo mkdir -p /usr/share/nano && sudo cp -rv "$RUTA/nanorc"/* /usr/share/nano/
 
 # -------------------------------
-# Zsh y P10K
+# Wallpapers y ZSH
 # -------------------------------
-rm -f ~/.zshrc
-cp -v $ruta/.zshrc ~/.zshrc
-cp -v $ruta/.p10k.zsh ~/.p10k.zsh
-sudo cp -v $ruta/.p10k.zsh-root /root/.p10k.zsh
+mkdir -p ~/Wallpaper ~/ScreenShots
+[ -d "$RUTA/Wallpaper" ] && cp -v "$RUTA"/Wallpaper/* ~/Wallpaper/
 
-# -------------------------------
-# Polybar Spotify
-# -------------------------------
-run_step "Clonando plugin Polybar Spotify" git clone https://github.com/PrayagS/polybar-spotify.git ~/.config/polybar/scripts/polybar-spotify
+# Zsh Config
+cp -v "$RUTA/.zshrc" ~/.zshrc 2>/dev/null || echo "[WARN] .zshrc no encontrado en repo"
+cp -v "$RUTA/.p10k.zsh" ~/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh no encontrado en repo"
+sudo cp -v "$RUTA/.p10k.zsh-root" /root/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh-root no encontrado"
 
-# -------------------------------
 # Plugins Zsh
-# -------------------------------
-run_step "Instalando plugins Zsh" sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions zsh-autocomplete web-search.plugin.zsh
+run_step "Instalando plugins Zsh" sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions
 sudo mkdir -p /usr/share/zsh-sudo
-cd /usr/share/zsh-sudo
-sudo wget -q https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/sudo/sudo.plugin.zsh
+sudo wget -q -O /usr/share/zsh-sudo/sudo.plugin.zsh https://githubusercontent.com
 
 # -------------------------------
-# Cambiando shell a Zsh
+# Permisos y Shell
 # -------------------------------
-run_step "Cambiando shell a Zsh" chsh -s /usr/bin/zsh
-sudo usermod --shell /usr/bin/zsh root
-sudo ln -sf ~/.zshrc /root/.zshrc
+run_step "Cambiando shell a Zsh" sudo chsh -s /usr/bin/zsh "$USER"
+sudo chsh -s /usr/bin/zsh root
 
-# -------------------------------
-# Permisos de Scripts
-# -------------------------------
-chmod +x ~/.config/bspwm/bspwmrc
-chmod +x ~/.config/bspwm/scripts/*
-chmod +x ~/.config/zsh/*.zsh
-chmod +x ~/.config/polybar/launch.sh
+# Asegurar permisos de ejecución
+chmod +x ~/.config/bspwm/bspwmrc 2>/dev/null || true
+chmod +x ~/.config/bspwm/scripts/* 2>/dev/null || true
+chmod +x ~/.config/polybar/launch.sh 2>/dev/null || true
 
-# -------------------------------
-# Finalización
-# -------------------------------
-notify-send "BSPWM y Entorno Instalado Correctamente"
-echo "[INFO] Instalación completada exitosamente."
+echo -e "\n[INFO] Instalación completada. Reinicia para aplicar todos los cambios."

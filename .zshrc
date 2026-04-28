@@ -139,6 +139,5 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 export LC_ALL=es_ES.UTF-8
 
 
-. "$HOME/.atuin/bin/env"
 
 eval "$(atuin init zsh)"

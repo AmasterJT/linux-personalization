@@ -57,7 +57,7 @@ DEP_GENERALES=(
     libxcb-render-util0-dev libxcb-render0-dev libxcb-present-dev
     libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev
     libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev
-    libpcre3-dev libpcre2-dev ninja-build curl cava
+    libpcre3-dev libpcre2-dev ninja-build curl cava lsd atuin
 )
 
 run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"

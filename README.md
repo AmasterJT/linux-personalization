@@ -3,7 +3,6 @@
 # 🖥️ BSPWM Installer Pro
 
 ![Status](https://img.shields.io/badge/status-en%20desarrollo-yellow)
-![Focus](https://img.shields.io/badge/focus-linux-OS-orange)
 ![Platform](https://img.shields.io/badge/platform-VMware-blue)
 
 Script automatizado para configurar un entorno completo basado en **bspwm** en sistemas Debian/Ubuntu y derivados como Parrot OS.

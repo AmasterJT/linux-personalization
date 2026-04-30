@@ -56,7 +56,3 @@ chmod +x install.sh
 Desarrollado por **AmasterJT**.
 
 Inspirado en la necesidad de automatizar y simplificar la configuración de un entorno **bspwm** funcional, limpio y personalizado.
-
-## 📄 Licencia
-
-Este proyecto está bajo licencia **Academic**.

@@ -20,11 +20,17 @@ trap 'error_exit $LINENO' ERR
 
 # Funcio para ejecutar comandos con trazas (se quita redirección total para ver sudo)
 run_step() {
-    echo -e "\n[INFO] $1..."
+    local msg="$1"
     shift
+<<<<<<< HEAD
     # Permitimos ver errores de comandos críticos como instalaciones y compilaciones
     "$@"
     echo "[OK] Paso completado."
+=======
+    echo -e "\n[INFO] $msg..."
+    "$@" || { echo "[ERROR] Falló: $msg"; exit 1; }
+    echo "[OK] $msg completado."
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 }
 
 # -------------------------------
@@ -39,7 +45,11 @@ fi
 # Actualizacion del sistema
 # -------------------------------
 run_step "Actualizando sistema" sudo apt update
+<<<<<<< HEAD
 run_step "Actualizando paquetes" sudo apt full-upgrade -y
+=======
+# run_step "Actualizando paquetes" sudo parrot-upgrade -y
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 
 # -------------------------------
 # Instalando todas las dependencias
@@ -64,8 +74,18 @@ run_step "Instalando dependencias base y de compilación" sudo apt install -y "$
 
 PAQUETES_ADICIONALES=(
     feh flameshot scrub zsh rofi xclip bat locate wmname acpi
+<<<<<<< HEAD
     bspwm sxhkd imagemagick ranger caja nautilus pavucontrol lsb-release alacritty
+=======
+    bspwm sxhkd imagemagick ranger caja nautilus pavucontrol alacritty
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 )
+
+# Instalando paquete lsb.deb local
+if [ -f "$RUTA/lsb.deb" ]; then
+    run_step "Instalando lsb.deb" sudo dpkg -i "$RUTA/lsb.deb"
+    run_step "Corrigiendo dependencias de lsb.deb" sudo apt -f install -y
+fi
 
 run_step "Instalando paquetes adicionales" sudo apt install -y "${PAQUETES_ADICIONALES[@]}"
 
@@ -75,11 +95,37 @@ run_step "Instalando paquetes adicionales" sudo apt install -y "${PAQUETES_ADICI
 mkdir -p ~/github
 cd ~/github
 
+<<<<<<< HEAD
 # Polybar
 if [ ! -d "polybar" ]; then
     run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar
 fi
 run_step "Compilando Polybar" bash -c "cd polybar && mkdir -p build && cd build && cmake .. && make -j\$(nproc) && sudo make install"
+=======
+# -------------------------------
+# Clonando repositorios
+# -------------------------------
+# Clonando Polybar
+if [ -d ~/github/polybar ]; then
+    run_step "Actualizando Polybar" git -C ~/github/polybar pull
+else
+    run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar ~/github/polybar
+fi
+
+# Clonando Picom
+if [ -d ~/github/picom ]; then
+    run_step "Actualizando Picom" git -C ~/github/picom pull
+else
+    run_step "Clonando Picom" git clone https://github.com/ibhagwan/picom.git ~/github/picom
+fi
+
+# Clonando zscroll
+if [ -d ~/github/zscroll ]; then
+    run_step "Actualizando zscroll" git -C ~/github/zscroll pull
+else
+    run_step "Clonando zscroll" git clone https://github.com/noctuid/zscroll ~/github/zscroll
+fi
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 
 # Picom (ibhagwan)
 if [ ! -d "picom" ]; then
@@ -96,8 +142,23 @@ run_step "Instalando zscroll" bash -c "cd zscroll && sudo python3 setup.py insta
 # -------------------------------
 # Instalando Powerlevel10k
 # -------------------------------
+<<<<<<< HEAD
 [ -d ~/.powerlevel10k ] || git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.powerlevel10k
 sudo [ -d /root/.powerlevel10k ] || sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/.powerlevel10k
+=======
+# Instalando Powerlevel10k
+if [ -d ~/.powerlevel10k ]; then
+    run_step "Actualizando Powerlevel10k" git -C ~/.powerlevel10k pull
+else
+    run_step "Clonando Powerlevel10k" git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.powerlevel10k
+fi
+
+# Fuente para Zsh
+if ! grep -q 'source ~/.powerlevel10k/powerlevel10k.zsh-theme' ~/.zshrc; then
+    echo 'source ~/.powerlevel10k/powerlevel10k.zsh-theme' >> ~/.zshrc
+fi
+
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 
 # -------------------------------
 # Configuracin y Fuentes
@@ -143,6 +204,7 @@ cp -v "$RUTA/.zshrc" ~/.zshrc 2>/dev/null || echo "[WARN] .zshrc no encontrado e
 cp -v "$RUTA/.p10k.zsh" ~/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh no encontrado en repo"
 sudo cp -v "$RUTA/.p10k.zsh-root" /root/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh-root no encontrado"
 
+<<<<<<< HEAD
 # Plugins Zsh
 run_step "Instalando plugins Zsh" sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions
 sudo mkdir -p /usr/share/zsh-sudo
@@ -152,6 +214,61 @@ sudo chmod +x /usr/share/zsh-sudo/sudo.plugin.zsh
 sudo mkdir -p /usr/share/zsh-web-search
 sudo wget -q -O  /usr/share/zsh-web-search/web-search.plugin.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/plugins/web-search/web-search.plugin.zsh
 sudo chmod +x /usr/share/zsh-web-search/web-search.plugin.zsh
+=======
+# -------------------------------
+# Plugins Zsh y Aplicaciones
+# -------------------------------
+
+# Instalar plugins APT si existen
+run_step "Instalando plugin zsh-syntax-highlighting" sudo apt install -y zsh-syntax-highlighting || true
+run_step "Instalando plugin zsh-autosuggestions" sudo apt install -y zsh-autosuggestions || true
+
+# Crear carpetas de plugins
+mkdir -p ~/.oh-my-zsh/custom/plugins
+sudo mkdir -p /usr/share/zsh-sudo
+sudo mkdir -p /usr/share/zsh-web-search
+
+# zsh-autocomplete
+if [ ! -d ~/.oh-my-zsh/custom/plugins/zsh-autocomplete ]; then
+    run_step "Clonando zsh-autocomplete" git clone https://github.com/marlonrichert/zsh-autocomplete.git ~/.oh-my-zsh/custom/plugins/zsh-autocomplete
+else
+    run_step "Actualizando zsh-autocomplete" git -C ~/.oh-my-zsh/custom/plugins/zsh-autocomplete pull
+fi
+
+# web-search.plugin.zsh
+if [ ! -f /usr/share/zsh-web-search/web-search.plugin.zsh ]; then
+    run_step "Descargando web-search.plugin.zsh" sudo wget -q -O /usr/share/zsh-web-search/web-search.plugin.zsh \
+        https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/web-search/web-search.plugin.zsh
+else
+    run_step "Actualizando web-search.plugin.zsh" sudo wget -q -O /usr/share/zsh-web-search/web-search.plugin.zsh \
+        https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/web-search/web-search.plugin.zsh
+fi
+
+# sudo.plugin.zsh
+if [ ! -f /usr/share/zsh-sudo/sudo.plugin.zsh ]; then
+    run_step "Descargando sudo.plugin.zsh" sudo wget -q -O /usr/share/zsh-sudo/sudo.plugin.zsh \
+        https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/sudo/sudo.plugin.zsh
+else
+    run_step "Actualizando sudo.plugin.zsh" sudo wget -q -O /usr/share/zsh-sudo/sudo.plugin.zsh \
+        https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/sudo/sudo.plugin.zsh
+fi
+
+# -------------------------------
+# Instalando Atuín (historial avanzado)
+# -------------------------------
+if [ ! -d ~/.atuin ]; then
+    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+else
+    run_step "Actualizando Atuín" echo ""
+fi
+
+# Asegurar que ~/.atuin/bin esté en PATH
+if ! grep -q 'export PATH="$HOME/.atuin/bin:$PATH"' ~/.zshrc; then
+    echo 'export PATH="$HOME/.atuin/bin:$PATH"' >> ~/.zshrc
+fi
+
+
+>>>>>>> 44c61bf (agregamos unas configuraciones a los ficheros)
 
 # -------------------------------
 # Permisos y Shell

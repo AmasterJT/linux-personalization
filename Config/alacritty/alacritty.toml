@@ -4,7 +4,7 @@ program = "/usr/bin/zsh"
 #args = ["--login", "-c", "tmux new-session -A -s default"]
 
 [window]
-opacity = 0.98
+opacity = 0.85
 decorations = "none"
 resize_increments = true
 padding = {x=10, y=10}

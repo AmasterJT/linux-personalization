@@ -110,7 +110,7 @@ if [ ! -d "picom" ]; then
     run_step "Clonando Picom" git clone https://github.com/ibhagwan/picom.git
 fi
 run_step "Compilando Picom" bash -c "cd picom && git submodule update --init --recursive && meson --buildtype=release . build && ninja -C build && sudo ninja -C build install"
-    
+
 # Clonando zscroll
 if [ -d ~/.tmux/plugins/tpm ]; then
     run_step "Actualizando tpm" git -C ~/.tmux/plugins/tpm pull
@@ -175,6 +175,7 @@ cp -v "$RUTA/.nanorc" ~/.nanorc 2>/dev/null || echo "[WARN] .nanorc no encontrad
 # Zsh Config
 cp -v "$RUTA/.zshrc" ~/.zshrc 2>/dev/null || echo "[WARN] .zshrc no encontrado en repo"
 cp -v "$RUTA/.p10k.zsh" ~/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh no encontrado en repo"
+cp -v "$RUTA/.tmux.conf" ~/.tmux.conf 2>/dev/null || echo "[WARN] .tmux.conf no encontrado en repo"
 sudo cp -v "$RUTA/.p10k.zsh-root" /root/.p10k.zsh 2>/dev/null || echo "[WARN] .p10k.zsh-root no encontrado"
 
 # -------------------------------

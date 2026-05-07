@@ -57,13 +57,13 @@ DEP_GENERALES=(
     libxcb-render-util0-dev libxcb-render0-dev libxcb-present-dev
     libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev
     libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev
-    libpcre3-dev libpcre2-dev ninja-build curl cava 
+    libpcre3-dev libpcre2-dev ninja-build curl cava lsd atuin
 )
 
 run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"
 
 PAQUETES_ADICIONALES=(
-    feh flameshot scrub zsh rofi xclip bat locate wmname acpi lsd atuin neovim tmux
+    feh flameshot scrub zsh rofi xclip bat locate wmname acpi
     bspwm sxhkd imagemagick ranger caja nautilus pavucontrol alacritty
 )
 
@@ -74,8 +74,6 @@ if [ -f "$RUTA/lsb.deb" ]; then
 fi
 
 run_step "Instalando paquetes adicionales" sudo apt install -y "${PAQUETES_ADICIONALES[@]}"
-
-run_step "Instalamos NODE" sudo apt install -y nodejs npm
 
 # -------------------------------
 # Clonando y compilando desde GitHub
@@ -91,13 +89,6 @@ if [ -d ~/github/polybar ]; then
     run_step "Actualizando Polybar" git -C ~/github/polybar pull
 else
     run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar ~/github/polybar
-
-    cd ~/github/polybar
-    mkdir -p build
-    cd build
-    cmake ..
-    make -j$(nproc)
-    sudo make install
 fi
 
 # Clonando Picom
@@ -119,13 +110,13 @@ if [ ! -d "picom" ]; then
     run_step "Clonando Picom" git clone https://github.com/ibhagwan/picom.git
 fi
 run_step "Compilando Picom" bash -c "cd picom && git submodule update --init --recursive && meson --buildtype=release . build && ninja -C build && sudo ninja -C build install"
-
-# zscroll
-if [ ! -d "zscroll" ]; then
-    run_step "Clonando zscroll" git clone https://github.com/noctuid/zscroll
+    
+# Clonando zscroll
+if [ -d ~/.tmux/plugins/tpm ]; then
+    run_step "Actualizando tpm" git -C ~/.tmux/plugins/tpm pull
+else
+    run_step "Clonando tpm" git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 fi
-run_step "Instalando zscroll" bash -c "cd zscroll && sudo python3 setup.py install"
-
 # -------------------------------
 # Instalando Powerlevel10k
 # -------------------------------

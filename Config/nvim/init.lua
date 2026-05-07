@@ -1,7 +1,6 @@
--- Instalar vim-plug si no está instalado
 local install_path = vim.fn.stdpath('data') .. '/site/autoload/plug.vim'
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
-  vim.fn.system({'sh', '-c', 'curl -fLo ' .. install_path .. ' --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'})
+  vim.fn.system({'sh', '-c', 'curl -fLo ' .. install_path .. ' --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'})                                                                                                                   
   vim.cmd('autocmd VimEnter * PlugInstall --sync | source $MYVIMRC')
 end
 
@@ -27,6 +26,7 @@ vim.cmd([[
   Plug 'junegunn/fzf.vim'
   Plug 'mhinz/vim-signify'
   Plug 'andrewferrier/wrapping.nvim'
+  Plug 'supermaven-inc/supermaven-nvim'
   call plug#end()
 ]])
 
@@ -42,7 +42,7 @@ vim.opt.encoding = 'utf-8'         -- permite setear la codificación de archivo
 vim.opt.shiftwidth = 4             -- la indentación genera 4 espacios
 vim.opt.wrap = false               -- el texto en una linea no baja a la siguiente, solo continua en la misma hasta el infinito.
 vim.opt.swapfile = false           -- para evitar el mensaje que sale al abrir algunos archivos sobre swap.
-vim.opt.clipboard = 'unnamed'      -- para poder utilizar el portapapeles del sistema operativo 'esto permite poder copiar y pegar desde cualquier parte a nvim y viceversa.
+vim.opt.clipboard = 'unnamed'      -- para poder utilizar el portapapeles del sistema operativo 'esto permite poder copiar y pegar desde cualquier parte a nvim y viceversa.                                                                                          
 
 -- configuracion del tema
 vim.opt.termguicolors = true       -- activa el true color en la terminal
@@ -56,6 +56,16 @@ end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+-- Configuración de supermaven
+require('supermaven-nvim').setup({
+    keymaps = {
+        accept_suggestion = "<C-Tab>",
+        clear_suggestion = "<C-]>",
+        accept_word = "<C-j>",
+    },
+})
+
+
 -- configuracion de emmet-vim
 vim.g.user_emmet_leader_key = ','  -- mapeando la tecla lider por una coma, con esto se completa los tag con doble coma.
 
@@ -64,19 +74,28 @@ vim.g.airline_extensions_tabline_enabled = 1      -- muestra la linea de pestañ
 vim.g.airline_extensions_tabline_formatter = 'unique_tail'  -- muestra solo el nombre del archivo que estamos modificando
 vim.g.airline_theme = 'onedark'   -- el tema de airline
 
+-- Formato más limpio: línea:columna
+vim.g.airline_section_z = '☰%l/%L :%c'
+
 -- configuracion de nerdtree
-vim.api.nvim_set_keymap('n', '<C-n>', ':NERDTreeToggle<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-t>', ':NERDTreeToggle<CR>', { noremap = true, silent = true })
 
 -- configuracion por defecto de coc
 -- TextEdit might fail if hidden is not set.
 vim.opt.hidden = true
+
+-- Deshabilitar advertencias de trailing spaces en CoC
+vim.g.coc_status_error_sign = ''
+vim.g.coc_status_warning_sign = ''
+
+vim.g.airline_section_warning = ''
 
 -- Some servers have issues with backup files, see #649.
 vim.opt.backup = false
 vim.opt.writebackup = false
 
 -- Give more space for displaying messages.
-vim.opt.cmdheight = 2
+vim.opt.cmdheight = 1
 
 -- Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
 -- delays and poor user experience.
@@ -95,7 +114,7 @@ else
 end
 
 -- Mapeos para CoC
-vim.api.nvim_set_keymap('i', '<TAB>', [[pumvisible() ? "\<C-n>" : v:lua.check_back_space() ? "\<TAB>" : coc#refresh()]], { noremap = true, expr = true, silent = true })
+vim.api.nvim_set_keymap('i', '<TAB>', [[pumvisible() ? "\<C-n>" : v:lua.check_back_space() ? "\<TAB>" : coc#refresh()]], { noremap = true, expr = true, silent = true })                                                                                              
 vim.api.nvim_set_keymap('i', '<S-TAB>', [[pumvisible() ? "\<C-p>" : "\<C-h>"]], { noremap = true, expr = true, silent = true })
 
 _G.check_back_space = function()
@@ -106,7 +125,7 @@ end
 vim.api.nvim_set_keymap('i', '<c-space>', [[coc#refresh()]], { noremap = true, expr = true, silent = true })
 vim.api.nvim_set_keymap('i', '<c-@>', [[coc#refresh()]], { noremap = true, expr = true, silent = true })
 
-vim.api.nvim_set_keymap('i', '<cr>', [[pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"]], { noremap = true, expr = true, silent = true })
+vim.api.nvim_set_keymap('i', '<cr>', [[pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"]], { noremap = true, expr = true, silent = true })                                                                                             
 
 vim.api.nvim_set_keymap('n', '[g', '<Plug>(coc-diagnostic-prev)', { silent = true })
 vim.api.nvim_set_keymap('n', ']g', '<Plug>(coc-diagnostic-next)', { silent = true })
@@ -159,12 +178,12 @@ vim.api.nvim_set_keymap('o', 'ac', '<Plug>(coc-classobj-a)', { silent = true })
 
 vim.api.nvim_set_keymap('n', '<leader>cl', ':CocCommand clangd.switchSourceHeader<CR>', { noremap = true, silent = true })
 
-vim.api.nvim_set_keymap('n', '<C-f>', [[coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"]], { noremap = true, expr = true, silent = true })
-vim.api.nvim_set_keymap('n', '<C-b>', [[coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"]], { noremap = true, expr = true, silent = true })
-vim.api.nvim_set_keymap('i', '<C-f>', [[coc#float#has_scroll() ? "\<C-r>=coc#float#scroll(1)\<CR>" : "\<Right>"]], { noremap = true, expr = true, silent = true })
-vim.api.nvim_set_keymap('i', '<C-b>', [[coc#float#has_scroll() ? "\<C-r>=coc#float#scroll(0)\<CR>" : "\<Left>"]], { noremap = true, expr = true, silent = true })
-vim.api.nvim_set_keymap('v', '<C-f>', [[coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"]], { noremap = true, expr = true, silent = true })
-vim.api.nvim_set_keymap('v', '<C-b>', [[coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"]], { noremap = true, expr = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-f>', [[coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"]], { noremap = true, expr = true, silent = true })                                                                                                                    
+vim.api.nvim_set_keymap('n', '<C-b>', [[coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"]], { noremap = true, expr = true, silent = true })                                                                                                                    
+vim.api.nvim_set_keymap('i', '<C-f>', [[coc#float#has_scroll() ? "\<C-r>=coc#float#scroll(1)\<CR>" : "\<Right>"]], { noremap = true, expr = true, silent = true })                                                                                                    
+vim.api.nvim_set_keymap('i', '<C-b>', [[coc#float#has_scroll() ? "\<C-r>=coc#float#scroll(0)\<CR>" : "\<Left>"]], { noremap = true, expr = true, silent = true })                                                                                                     
+vim.api.nvim_set_keymap('v', '<C-f>', [[coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"]], { noremap = true, expr = true, silent = true })                                                                                                                    
+vim.api.nvim_set_keymap('v', '<C-b>', [[coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"]], { noremap = true, expr = true, silent = true })                                                                                                                    
 
 vim.api.nvim_set_keymap('n', '<C-s>', ':<C-u>CocList -I symbols<cr>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<space>a', ':<C-u>CocList diagnostics<cr>', { noremap = true, silent = true })

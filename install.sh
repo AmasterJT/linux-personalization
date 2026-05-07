@@ -57,13 +57,13 @@ DEP_GENERALES=(
     libxcb-render-util0-dev libxcb-render0-dev libxcb-present-dev
     libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev
     libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev
-    libpcre3-dev libpcre2-dev ninja-build curl cava lsd atuin
+    libpcre3-dev libpcre2-dev ninja-build curl cava 
 )
 
 run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"
 
 PAQUETES_ADICIONALES=(
-    feh flameshot scrub zsh rofi xclip bat locate wmname acpi
+    feh flameshot scrub zsh rofi xclip bat locate wmname acpi lsd atuin neovim tmux
     bspwm sxhkd imagemagick ranger caja nautilus pavucontrol alacritty
 )
 
@@ -74,6 +74,8 @@ if [ -f "$RUTA/lsb.deb" ]; then
 fi
 
 run_step "Instalando paquetes adicionales" sudo apt install -y "${PAQUETES_ADICIONALES[@]}"
+
+run_step "Instalamos NODE" sudo apt install -y nodejs npm
 
 # -------------------------------
 # Clonando y compilando desde GitHub
@@ -89,6 +91,13 @@ if [ -d ~/github/polybar ]; then
     run_step "Actualizando Polybar" git -C ~/github/polybar pull
 else
     run_step "Clonando Polybar" git clone --recursive https://github.com/polybar/polybar ~/github/polybar
+
+    cd ~/github/polybar
+    mkdir -p build
+    cd build
+    cmake ..
+    make -j$(nproc)
+    sudo make install
 fi
 
 # Clonando Picom

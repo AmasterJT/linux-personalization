@@ -5,9 +5,8 @@ program = "/usr/bin/zsh"
 
 [window]
 opacity = 0.85
-decorations = "none"
 resize_increments = true
-padding = {x=10, y=10}
+padding = {x=5, y=5}
 
 
 [cursor]
@@ -42,3 +41,11 @@ normal = { family = "Hack Nerd Font Mono", style = "Regular" }
 
 [selection]
 save_to_clipboard = true
+
+
+[keyboard]
+bindings = [
+  { key = "T", mods = "Control|Shift", chars = "\x01c" },
+  { key = ")", mods = "Control|Shift", chars = "\x01%" },
+  { key = "=", mods = "Control|Shift", chars = "\x01\"" }
+]

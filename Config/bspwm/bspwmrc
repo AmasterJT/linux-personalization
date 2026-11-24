@@ -1,27 +1,108 @@
 #! /bin/sh
 
+# Apply toolkit theming before starting any application launcher. This is
+# session-local and does not modify GNOME's theme preferences.
+DARK_THEME_SETUP="$HOME/.config/bspwm/scripts/apply_dark_theme.sh"
+[ -r "$DARK_THEME_SETUP" ] && . "$DARK_THEME_SETUP"
+unset DARK_THEME_SETUP
+
 wmname LG3D &
-vmware-user-suid-wrapper &
+command -v vmware-user-suid-wrapper >/dev/null 2>&1 && vmware-user-suid-wrapper &
 
 pgrep -x sxhkd >/dev/null || sxhkd &
 
-bspc monitor -d I II III IV V VI VII VIII IX X
+# Use Debian's GDM greeter for Super+L and suspend/hibernate events. xss-lock's
+# delay inhibitor is the single lid-close path: it presents GDM before logind
+# is allowed to suspend, avoiding a late second lock after resume.
+SCREEN_LOCKER="$HOME/.config/bspwm/scripts/lock_screen.sh"
+if [ -x "$SCREEN_LOCKER" ]; then
+    if command -v xss-lock >/dev/null 2>&1 \
+            && ! pgrep -u "$(id -u)" -x xss-lock >/dev/null; then
+        if [ -n "${XDG_SESSION_ID:-}" ]; then
+            xss-lock --session="$XDG_SESSION_ID" --ignore-xss \
+                --transfer-sleep-lock -- "$SCREEN_LOCKER" &
+        else
+            xss-lock --ignore-xss --transfer-sleep-lock -- "$SCREEN_LOCKER" &
+        fi
+    fi
 
-bspc config border_width 2
+fi
+unset SCREEN_LOCKER
+
+# On external power the lid is commonly closed to use an external monitor.
+# Hold only logind's lid-switch action in that state: no suspend and therefore
+# no GDM lock. Disconnecting the charger restores the normal battery policy.
+LID_AC_INHIBITOR="$HOME/.config/bspwm/scripts/lid_ac_inhibitor.sh"
+if [ -x "$LID_AC_INHIBITOR" ] \
+        && ! pgrep -u "$(id -u)" -f '[/]lid_ac_inhibitor.sh$' >/dev/null; then
+    "$LID_AC_INHIBITOR" &
+fi
+unset LID_AC_INHIBITOR
+
+# Persistent threshold alerts (20%, 10% and 5%). The watcher sleeps between
+# reads and keeps only one GTK main loop for the complete session.
+BATTERY_ALERT="$HOME/.config/bspwm/scripts/battery_alert.py"
+if [ -x "$BATTERY_ALERT" ] \
+        && ! pgrep -u "$(id -u)" -f '[/]battery_alert.py$' >/dev/null; then
+    "$BATTERY_ALERT" &
+fi
+unset BATTERY_ALERT
+
+# Touchpad: tap-to-click and natural (inverted) scrolling.
+TOUCHPAD_SETUP="$HOME/.config/bspwm/scripts/configure_touchpad.sh"
+[ -x "$TOUCHPAD_SETUP" ] && "$TOUCHPAD_SETUP" &
+
+# Record X11 clipboard changes for the Super+V history menu.
+CLIPBOARD_HISTORY="$HOME/.config/polybar/scripts/clipboard_history.py"
+if [ -x "$CLIPBOARD_HISTORY" ] \
+        && ! pgrep -f '[/]clipboard_history.py --daemon$' >/dev/null; then
+    "$CLIPBOARD_HISTORY" --daemon &
+fi
+
+# Emit a dedicated Alt+F1 shortcut when Super is pressed and released on its
+# own. xcape suppresses it when Super is used as a modifier, preserving
+# shortcuts such as Super+Return and Super+1.
+XCAPE_BIN=$(command -v xcape 2>/dev/null || true)
+if [ -z "$XCAPE_BIN" ] && [ -x "$HOME/.local/bin/xcape" ]; then
+    XCAPE_BIN="$HOME/.local/bin/xcape"
+fi
+if [ -n "$XCAPE_BIN" ] && ! pgrep -x xcape >/dev/null; then
+    "$XCAPE_BIN" -t 1000 -e 'Super_L=Alt_L|F1' &
+fi
+
+# Create the standard workspaces only on a genuinely new BSPWM session.
+# Re-running `bspc monitor -d` during `bspc wm -r` rebuilds desktop trees and
+# can alter the tiling layout of desktops that are not currently visible.
+DESKTOP_COUNT=$(bspc query -D -m focused | wc -l)
+NODE_COUNT=$(bspc query -N -m focused | wc -l)
+if [ "$DESKTOP_COUNT" -eq 1 ] && [ "$NODE_COUNT" -eq 0 ]; then
+    bspc monitor -d I II III IV V VI VII VIII IX X
+fi
+
 bspc config window_gap 6
 
 # bspc config split_ratio 0.42
 bspc config split_ratio 0.5
-bspc config top_padding 0
+# Polybar occupies y=10..40. Reserve this area explicitly instead of relying
+# on dynamic EWMH struts, which are not stable across `bspc wm -r`.
+bspc config top_padding 40
 
 
 bspc config borderless_monocle true
 bspc config gapless_monocle true
 
-bspc config pointer_follows_focus true
-bspc config focus_follows_pointer true
+bspc config pointer_follows_focus false
+bspc config focus_follows_pointer false
 bspc config click_to_focus true
 bspc config click_to_focus_button 1
+
+# Native pointer actions: hold Super and drag with the left button to move a
+# window, or with the right button to resize it. BSPWM tracks the complete drag
+# and turns tiled windows into floating windows when needed.
+bspc config pointer_modifier mod4
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_side
+bspc config pointer_action3 resize_corner
 
 # Reglas de ventana
 bspc rule -a Gimp desktop='^8' state=floating follow=on
@@ -29,10 +110,28 @@ bspc rule -a gnome-calculator: state=pseudo_tiled width=300 height=350
 bspc rule -a Qalculate-gtk: state=tiled
 bspc rule -a Spotify desktop='^10' state=tiled follow=on
 bspc rule -a Pavucontrol: state=floating follow=on
+bspc rule -a org.gnome.Nautilus state=floating center=on rectangle=1200x820+0+0 follow=on
+bspc rule -a KeePassXC state=floating center=on rectangle=960x700+0+0 follow=on
+bspc rule -a BspwmSystemMonitor state=floating center=on layer=above sticky=on focus=on
+bspc rule -a BspwmBatteryAlert state=floating center=on layer=above sticky=on focus=on
+# VPN clients always use a compact floating window, regardless of whether they
+# were opened from Polybar, ArcMenu or another launcher.
+bspc rule -a 'protonvpn-app' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a 'warp-taskbar' state=floating center=on rectangle=880x660+0+0 follow=on
+bspc rule -a 'NordVPN' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a 'PureVPN' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a 'Mullvad VPN' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a 'ExpressVPN' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a '*VPN*' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a '*vpn*' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a '*Vpn*' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a '*tailscale*' state=floating center=on rectangle=900x700+0+0 follow=on
+bspc rule -a '*zerotier*' state=floating center=on rectangle=900x700+0+0 follow=on
 # bspc rule -a Chromium desktop='^2'
 # bspc rule -a mplayer2 state=floating
 # bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
+bspc rule -a BspwmWindowSwitcher state=floating center=on layer=above sticky=on focus=on
 
 
 # RESOLUCION ARANDR
@@ -41,10 +140,20 @@ bspc rule -a Screenkey manage=off
 feh --bg-fill ~/Wallpaper/Imagen_93.jpg
 
 # POLYBAR
-~/.config/polybar/launch.sh
+# A BSPWM reload must not tear down Polybar: removing its dock struts makes
+# hidden desktops recalculate against a temporary full-screen work area.
+# Start it only for a new session; reload Polybar explicitly with launch.sh.
+if ! pgrep -x polybar >/dev/null; then
+    ~/.config/polybar/launch.sh
+fi
 
-# CUSTOM
-bspc config focus_follows_pointer false
+# Keep every Polybar instance synchronized with BSPWM fullscreen state.
+FULLSCREEN_WATCHER="$HOME/.config/bspwm/scripts/hide_polybar_fullscreen.sh"
+"$FULLSCREEN_WATCHER" --replace &
+
+# Keep every inactive floating window behind the window being used.
+FLOATING_LAYER_WATCHER="$HOME/.config/bspwm/scripts/floating_window_layers.sh"
+"$FLOATING_LAYER_WATCHER" --replace &
 
 # PICOM
 picom --config ~/.config/picom/picom.conf &
@@ -58,5 +167,3 @@ bspc config normal_border_color "#0D1017"  # color de la ventana inactiva
 bspc config presel_feedback_color "#C39BD3"
 
 bspc config auto_fullscreen true
-
-#~/.config/bspwm/scripts/hide_polybar_fullscreen.sh  &

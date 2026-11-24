@@ -6,29 +6,83 @@
 
 # terminal emulator
 super + Return
-    alacritty
+    ~/.config/alacritty/alacritty-auto
 #/opt/kitty/bin/kitty
 
 # program launcher
 #super + d
 #	rofi -show run
 alt + space
-    rofi -show drun -bg "#FFFFFF" -fg "#FF0000"
+    ~/.config/polybar/scripts/launcher_blur
+
+# Dedicated event emitted by xcape for a short press of Super.
+alt + F1
+    ~/.config/polybar/scripts/launcher
+
+# Windows-like emoji and clipboard pickers
+super + period
+    ~/.config/polybar/scripts/rofi_emoji.py
+
+super + v
+    ~/.config/polybar/scripts/clipboard_history.py --menu
+
+# Laptop multimedia keys (PipeWire, MPRIS and display brightness).
+XF86MonBrightnessDown
+    ~/.config/polybar/scripts/osd_popup.py brightness change -5
+
+XF86MonBrightnessUp
+    ~/.config/polybar/scripts/osd_popup.py brightness change 5
+
+XF86AudioMute
+    ~/.config/polybar/scripts/osd_popup.py volume mute
+
+XF86AudioLowerVolume
+    ~/.config/polybar/scripts/osd_popup.py volume change -5
+
+XF86AudioRaiseVolume
+    ~/.config/polybar/scripts/osd_popup.py volume change 5
+
+XF86AudioMicMute
+    ~/.config/polybar/scripts/osd_popup.py microphone mute
+
+XF86AudioPrev
+    ~/.config/polybar/scripts/media_control.py previous
+
+XF86AudioPlay
+    ~/.config/polybar/scripts/media_control.py play-pause
+
+XF86AudioNext
+    ~/.config/polybar/scripts/media_control.py next
+
+# This keyboard exposes its extra launcher key as the generic XF86Launch2.
+XF86Launch2
+    ~/.config/polybar/scripts/launcher
 
 # make sxhkd reload its configuration files:
 super + Escape
     pkill -USR1 -x sxhkd
 
 ctrl + alt + l
-    /usr/bin/i3lock-fancy -t "Type password to unlock"
+    ~/.config/bspwm/scripts/gdm_lock_screen.sh
+
+# Toggle the standalone mouse crosshair used outside GNOME.
+super + alt + p
+    ~/.config/bspwm/scripts/toggle_mouse_crosshair.sh
+
+# Lock the current BSPWM session.
+super + l
+    ~/.config/bspwm/scripts/gdm_lock_screen.sh
 
 #################
 # bspwm hotkeys #
 #################
 
 # quit/restart bspwm
-super + alt + {q,r}
-    bspc {quit,wm -r}
+super + alt + q
+    bspc quit
+
+super + alt + r
+    ~/.config/bspwm/scripts/reload_bspwm.sh
 
 # close and kill
 super + {_,shift + }w
@@ -54,7 +108,7 @@ super + g
 # set the window state
 super + {t,shift + t,s,f}
     bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
-    /home/amaster/.config/polybar/scripts/toggle_polybar.sh
+    ~/.config/polybar/scripts/toggle_polybar.sh
 
 # set the node flags
 super + ctrl + {m,x,y,z}
@@ -71,15 +125,15 @@ super + {_,shift + }{Left,Down,Up,Right}
     bspc node -{f,s} {west,south,north,east}
 
 # focus the node for the given path jump
-super + {p,b,comma,period}
-    bspc node -f @{parent,brother,first,second}
+super + {p,b,comma}
+    bspc node -f @{parent,brother,first}
 
 # focus the next/previous window in the current desktop
 super + {_,shift + }c
     bspc node -f {next,prev}.local.!hidden.window
 
 # focus the next/previous desktop in the current monitor
-super + bracket{left,right}
+super + {Prior,Next}
     bspc desktop -f {prev,next}.local
 
 # focus the older or newer node in the focus history
@@ -94,24 +148,24 @@ super + {_,shift + }{1-9,0}
 
 
 # focus the next node/desktop if it is used
-super + {grave,Tab}
+super + Tab
     ~/.config/bspwm/scripts/switch_next_workspace.sh
 
 # focus the previous node/desktop if it is used
-super + shift + {grave, Tab}
+super + shift + Tab
     ~/.config/bspwm/scripts/switch_previous_workspace.sh
 
 #bspc {node,desktop} -f next.local
-super + alt + {grave,Tab}
+super + alt + Tab
     ~/.config/bspwm/scripts/switch_any_workspace.sh
 
-#focus the next window in the workspace
+# Visual window switcher. Repeated Alt+Tab changes the highlighted preview;
+# releasing Alt, pressing Enter or clicking a preview activates it.
 alt + Tab
-    ~/.config/bspwm/scripts/switch_next_windows.sh
+    ~/.config/bspwm/scripts/window_switcher.py --alt-held
 
-#focus the previous window in the worspace
 alt + shift + Tab
-    ~/.config/bspwm/scripts/switch_previous_windows.sh
+    ~/.config/bspwm/scripts/window_switcher.py --previous --alt-held
 
 
 
@@ -189,7 +243,7 @@ super + shift + b
 # 	bspc node --focus next.local  \
 
 super + e
-    caja
+    nautilus
 
 
 
@@ -198,24 +252,18 @@ super + e
 ###############
 
 @Print
-    screenshot select
+    flameshot gui
 
 @Print + ctrl
-    screenshot
+    flameshot full -c
 
 @Print + alt
-    screenshot window
+    flameshot screen -c
 
 ######################################
 #manejo de ventanas flotantes en BSPWM
 ######################################
 
-# Mantén presionado Super y arrastra con el botón izquierdo del ratón para mover la ventana
-super + button1
-    bspc node -t floating; bspc node -v
-
-# Mantén presionado Super y arrastra con el botón derecho del ratón para redimensionar la ventana
-super + button3
-    bspc node -t floating; bspc node -r
+# Super + arrastrar con el ratón se gestiona de forma nativa en bspwmrc.
 
 

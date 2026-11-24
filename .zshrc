@@ -141,3 +141,13 @@ export LC_ALL=es_ES.UTF-8
 
 
 eval "$(atuin init zsh)"
+
+# BSPWM applies its own dark toolkit theme. GNOME keeps using its native
+# settings because this block is skipped outside the BSPWM session.
+desktop_session="${XDG_CURRENT_DESKTOP:-${XDG_SESSION_DESKTOP:-${DESKTOP_SESSION:-}}}"
+if [[ "${desktop_session:l}" == *bspwm* ]]; then
+    export GTK_THEME=Adwaita:dark
+    export GTK2_RC_FILES=/usr/share/themes/Adwaita-dark/gtk-2.0/gtkrc
+    export QT_QPA_PLATFORMTHEME=gtk3
+fi
+unset desktop_session

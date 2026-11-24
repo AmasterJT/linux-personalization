@@ -1,0 +1,21 @@
+[Desktop Entry]
+Name=Files
+Name[es]=Archivos
+Comment=Access and organize files
+Comment[es]=Acceder a los archivos y organizarlos
+Keywords=folder;manager;explore;disk;filesystem;
+Keywords[es]=carpeta;gestor;explorar;disco;sistema de archivos;
+Exec=/usr/bin/env nautilus-compact --new-window %U
+Icon=org.gnome.Nautilus
+Terminal=false
+Type=Application
+DBusActivatable=true
+StartupNotify=true
+Categories=GNOME;GTK;Core;System;FileTools;FileManager;
+MimeType=inode/directory;application/x-gnome-saved-search;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Name[es]=Ventana nueva
+Exec=/usr/bin/env nautilus-compact --new-window

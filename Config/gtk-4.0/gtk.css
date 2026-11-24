@@ -1,0 +1,14 @@
+/* Nautilus: highlight only the icon-and-label tile, not the whole grid cell. */
+.nautilus-grid-view gridview > child:selected {
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+.nautilus-grid-view gridview > child:selected .compact-grid-tile {
+  color: #ffffff;
+  background-color: #1e5da9;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  padding: 8px;
+}

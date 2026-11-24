@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+LIBRARY="$HOME/.local/lib/linux-personalization/nautilus-compact-grid.so"
+OVERLAY="$HOME/.config/nautilus/overrides"
+
+if [ -r "$LIBRARY" ]; then
+    export LD_PRELOAD="$LIBRARY${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
+
+if [ -d "$OVERLAY" ]; then
+    export G_RESOURCE_OVERLAYS="/org/gnome/nautilus/ui=$OVERLAY"
+fi
+
+exec /usr/bin/nautilus "$@"

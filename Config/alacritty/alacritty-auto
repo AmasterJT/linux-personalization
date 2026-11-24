@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Launch Alacritty with a font size suited to the active desktop session.
+# Every terminal shortcut (SXHKD, ArcMenu and Polybar) uses this entry point.
+set -euo pipefail
+
+BSPWM_FONT_SIZE="${ALACRITTY_BSPWM_FONT_SIZE:-7.0}"
+GNOME_FONT_SIZE="${ALACRITTY_GNOME_FONT_SIZE:-10.0}"
+DEFAULT_FONT_SIZE="${ALACRITTY_DEFAULT_FONT_SIZE:-7.0}"
+
+desktop="${XDG_CURRENT_DESKTOP:-${XDG_SESSION_DESKTOP:-${DESKTOP_SESSION:-}}}"
+desktop="${desktop,,}"
+
+# The desktop variables inherited through a display manager are not always
+# updated after changing sessions, so prefer a live BSPWM connection.
+if command -v bspc >/dev/null 2>&1 && bspc query -M >/dev/null 2>&1; then
+    desktop="bspwm"
+fi
+
+case "$desktop" in
+    *gnome*) font_size="$GNOME_FONT_SIZE" ;;
+    *bspwm*) font_size="$BSPWM_FONT_SIZE" ;;
+    *)       font_size="$DEFAULT_FONT_SIZE" ;;
+esac
+
+exec /usr/bin/alacritty --option "font.size=$font_size" "$@"

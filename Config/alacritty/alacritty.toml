@@ -1,13 +1,15 @@
 [terminal.shell]
-args = ['--login']
-program = "/usr/bin/zsh"
-#args = ["--login", "-c", "tmux new-session -A -s default"]
+#args = ['--login']
+#program = "/usr/bin/zsh"
+program = "/usr/bin/tmux"
+args = ["new-session"]
 
 [window]
-opacity = 0.85
-resize_increments = true
+opacity = 0.95
+# Evita desajustes de la rejilla que dejan copias de la barra de tmux.
+resize_increments = false
 padding = {x=5, y=5}
-
+#startup_mode = "Fullscreen"
 
 [cursor]
 style = "Beam"
@@ -45,7 +47,10 @@ save_to_clipboard = true
 
 [keyboard]
 bindings = [
-  { key = "T", mods = "Control|Shift", chars = "\x01c" },
-  { key = ")", mods = "Control|Shift", chars = "\x01%" },
-  { key = "=", mods = "Control|Shift", chars = "\x01\"" }
+  { key = "T",   mods = "Control|Shift", chars = "\u0001c"  },
+  { key = ")",   mods = "Control|Shift", chars = "\u0001%"  },
+  { key = "=", mods = "Control|Shift", chars = "\u0001\"" },
+  { key = "Tab", mods = "Control",       chars = "\u0001n"  },
+  { key = "Tab", mods = "Control|Shift", chars = "\u0001p"  },
+  { key = "F11", action = "ToggleFullscreen" }
 ]

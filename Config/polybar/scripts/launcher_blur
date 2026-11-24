@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Fullscreen blurred launcher used by Alt+Space and a short Super press.
+exec rofi -no-lazy-grab -show drun -theme "$HOME/.config/rofi/themes/amaster-blur.rasi"

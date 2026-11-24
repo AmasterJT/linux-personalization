@@ -7,7 +7,7 @@
 configuration {
     font: "Hack Nerd Font 12";
     show-icons: true;
-    icon-theme: "Papirus";
+    icon-theme: "Win11-Hypervisors";
 }
 
 * {

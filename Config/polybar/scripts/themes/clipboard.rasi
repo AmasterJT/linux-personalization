@@ -1,0 +1,79 @@
+configuration {
+    font: "Iosevka Nerd Font 11";
+    show-icons: true;
+    disable-history: true;
+    matching: "fuzzy";
+}
+
+* {
+    background: #171922;
+    surface: #20232e;
+    surface-hover: #2a2e3c;
+    foreground: #e5e7ef;
+    muted: #858a9b;
+    accent: #f16e44;
+    transparent: #00000000;
+}
+
+window {
+    location: northeast;
+    anchor: northeast;
+    x-offset: -16px;
+    y-offset: 50px;
+    width: 26%;
+    height: 44%;
+    background-color: @background;
+    border: 1px;
+    border-color: #ffffff12;
+    border-radius: 14px;
+}
+
+mainbox {
+    children: [ inputbar, listview, message ];
+    padding: 12px;
+    spacing: 8px;
+    background-color: @background;
+}
+
+inputbar {
+    children: [ prompt, entry ];
+    padding: 9px 12px;
+    spacing: 8px;
+    background-color: @surface;
+    border-radius: 9px;
+}
+
+prompt { enabled: true; text-color: @muted; background-color: @transparent; }
+entry {
+    placeholder: "Buscar en el portapapeles";
+    placeholder-color: @muted;
+    text-color: @foreground;
+    background-color: @transparent;
+}
+listview {
+    columns: 1; lines: 9; spacing: 3px; scrollbar: false;
+    cycle: true; dynamic: true; background-color: @transparent;
+}
+element {
+    padding: 9px 10px; border-radius: 8px;
+    background-color: @transparent; text-color: @foreground;
+    orientation: horizontal;
+}
+element selected { background-color: @surface-hover; text-color: #ffffff; }
+element-icon {
+    size: 48px;
+    margin: 0px 10px 0px 0px;
+    border-radius: 7px;
+    background-color: @surface;
+}
+element-text {
+    background-color: @transparent; text-color: inherit; vertical-align: 0.5;
+}
+message {
+    padding: 7px 4px 1px; border: 1px 0px 0px;
+    border-color: #ffffff12; background-color: @transparent;
+}
+textbox {
+    horizontal-align: 0.5; text-color: @muted;
+    background-color: @transparent; font: "Iosevka Nerd Font 9";
+}

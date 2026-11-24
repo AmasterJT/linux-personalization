@@ -148,4 +148,4 @@ configuration {
 
 
 //@theme "/usr/share/rofi/themes/Pop-Dark.rasi"
-@theme "/home/amaster/.config/rofi/themes/amaster.rasi"
+@theme "~/.config/rofi/themes/amaster.rasi"

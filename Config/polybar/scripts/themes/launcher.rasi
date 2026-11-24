@@ -1,7 +1,7 @@
 configuration {
-    font:                           "Iosevka Nerd Font bold 10";
+    font:                           "Noto Sans 10";
     show-icons:                     true;
-	icon-theme: 					"Papirus";
+	icon-theme: 					"Win11-Hypervisors";
     display-drun: 					"";
     drun-display-format:            " {name}";
     threads:                        0;
@@ -26,7 +26,10 @@ configuration {
     white: rgba ( 255, 255, 255, 100 % ); 
 
     foreground:                  rgba ( 196, 203, 212, 100 % );
-    background:                  rgba ( 45, 48, 59, 95 % );
+    background:                  rgba ( 23, 26, 33, 94 % );
+    background-alt:              rgba ( 64, 69, 82, 95 % );
+    urgent:                      @red;
+    origin-background:           @background;
     
     //foreground: @black;
     //background: @orange;
@@ -66,10 +69,10 @@ window {
     background-color:               @background;
     text-color:                     @foreground;
     border-radius:                  10px;
-    height:                         34%;
-    width:                          17%;
-    x-offset:                       0.35%;
-    y-offset:                       56px;
+    height:                         43%;
+    width:                          19%;
+    x-offset:                       6px;
+    y-offset:                       48px;
     border:                  		3;
     border-color:                  	@orange;
 }
@@ -78,7 +81,7 @@ prompt {
     enabled: 						true;
 	padding: 						4px 4px 6px 12px;
 	background-color: 				@background;
-	text-color: 					@purple;
+	text-color: 					@orange;
 }
 
 inputbar {
@@ -88,7 +91,7 @@ inputbar {
     expand:                         false;
     border:                  		0px 0px 2px 0px;
     border-radius:                  10px;
-    border-color:                  	@purple;
+    border-color:                  	@orange;
     margin:                         0px 0px 0px 0px;
     padding:                        0px 0px 0px 0px;
     position:                       center;
@@ -98,10 +101,10 @@ inputbar {
 entry {
     background-color:               @background;
     text-color:                     @foreground;
-    placeholder-color:              @purple-light;
+    placeholder-color:              @gray-light;
     expand:                         true;
     horizontal-align:               0;
-    placeholder:                    "Search";
+    placeholder:                    "Buscar aplicaciones";
     blink:                          true;
     padding:                        5px 0px 0px 0px;
 }
@@ -116,7 +119,7 @@ case-indicator {
 listview {
     background-color:               @background;
     columns:                        1;
-    spacing:                        4px;
+    spacing:                        3px;
     cycle:                          false;
     dynamic:                        true;
     layout:                         vertical;
@@ -133,13 +136,14 @@ element {
     background-color:               @background;
     text-color:                     @white;
     orientation:                    horizontal;
-    border-radius:                  2px;
-    padding:                        6px 6px 6px 6px;
+    border-radius:                  8px;
+    padding:                        8px 9px;
 }
 
 element-icon {
-    size:                           24px;
+    size:                           28px;
     border:                         0px;
+    margin:                         0px 9px 0px 0px;
 }
 
 element-text {
@@ -167,7 +171,7 @@ element selected {
     background-color:               @orange;
     text-color:                     @black;
     border:                  		0px;
-    border-radius:                  2px;
+    border-radius:                  8px;
 }
 
 element selected.urgent {

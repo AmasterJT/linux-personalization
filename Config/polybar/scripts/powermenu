@@ -24,7 +24,7 @@ case $chosen in
         systemctl reboot
         ;;
     $lock)
-        i3lock
+        ~/.config/bspwm/scripts/gdm_lock_screen.sh
         ;;
     $suspend)
         mpc -q pause

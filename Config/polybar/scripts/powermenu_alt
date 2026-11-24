@@ -23,7 +23,7 @@ $reboot)
     systemctl reboot
     ;;
 $lock)
-    i3lock-fancy
+    ~/.config/bspwm/scripts/gdm_lock_screen.sh
     ;;
 $suspend)
     systemctl suspend

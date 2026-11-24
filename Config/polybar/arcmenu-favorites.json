@@ -1,0 +1,53 @@
+[
+  {
+    "kind": "app",
+    "desktop_id": "brave-browser.desktop",
+    "label": "Brave",
+    "icon": "brave-browser"
+  },
+  {
+    "kind": "app",
+    "desktop_id": "org.gnome.Nautilus.desktop",
+    "label": "Archivos",
+    "icon": "org.gnome.Nautilus"
+  },
+  {
+    "kind": "command",
+    "id": "terminal",
+    "label": "Terminal",
+    "icon": "Alacritty",
+    "command": [
+      "~/.config/alacritty/alacritty-auto"
+    ]
+  },
+  {
+    "kind": "app",
+    "desktop_id": "org.gnome.TextEditor.desktop",
+    "label": "Editor de texto",
+    "icon": "org.gnome.TextEditor"
+  },
+  {
+    "kind": "app",
+    "desktop_id": "be.maartenbaert.simplescreenrecorder.desktop",
+    "label": "SimpleScreenRecorder",
+    "icon": "simplescreenrecorder"
+  },
+  {
+    "kind": "app",
+    "desktop_id": "org.ksnip.ksnip.desktop",
+    "label": "ksnip",
+    "icon": "ksnip"
+  },
+  {
+    "kind": "app",
+    "desktop_id": "virtualbox.desktop",
+    "label": "Oracle VirtualBox",
+    "icon": "virtualbox"
+  },
+  {
+    "kind": "app",
+    "desktop_id": "com.microsoft.VSCode.desktop",
+    "label": "Visual Studio Code",
+    "icon": "vscode"
+  }
+]

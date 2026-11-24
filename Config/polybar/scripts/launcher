@@ -1,3 +1,25 @@
 #!/bin/sh
 
-rofi -no-lazy-grab -show drun -theme $HOME/.config/polybar/scripts/themes/launcher.rasi -bg "#FFFFFF" -fg "#FF0000"
+# Explicit ArcMenu toggle. Checking the lock owner here avoids relying on a
+# second GTK process to close the first one, which can fail while the menu has
+# keyboard focus.
+popup="$HOME/.config/polybar/scripts/arcmenu_popup.py"
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
+lock_file="$runtime_dir/linux-personalization-arcmenu.lock"
+
+if [ -r "$lock_file" ]; then
+    pid=$(cat "$lock_file" 2>/dev/null || true)
+    case "$pid" in
+        ''|*[!0-9]*) ;;
+        *)
+            if kill -0 "$pid" 2>/dev/null \
+                    && [ -r "/proc/$pid/cmdline" ] \
+                    && tr '\0' ' ' < "/proc/$pid/cmdline" | grep -Fq "$popup"; then
+                kill "$pid"
+                exit 0
+            fi
+            ;;
+    esac
+fi
+
+exec "$popup"

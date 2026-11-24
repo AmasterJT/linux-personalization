@@ -94,7 +94,6 @@ PAQUETES_BASE=(
     ca-certificates
     gnupg
     apt-transport-https
-    software-properties-common
     pkg-config
     cmake
     meson
@@ -134,7 +133,6 @@ PAQUETES_TERMINAL=(
     fd-find
     ranger
     mc
-    neofetch
     fastfetch
     acpi
     wmname

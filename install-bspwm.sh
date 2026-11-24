@@ -63,8 +63,11 @@ DEP_GENERALES=(
 run_step "Instalando dependencias base y de compilación" sudo apt install -y "${DEP_GENERALES[@]}"
 
 PAQUETES_ADICIONALES=(
-    feh flameshot scrub zsh rofi xclip bat locate wmname acpi
-    bspwm sxhkd imagemagick ranger caja nautilus pavucontrol alacritty
+    feh flameshot scrub zsh rofi xclip xdotool xinput vainfo bat locate wmname acpi
+    bspwm sxhkd xcape xss-lock upower imagemagick ranger caja nautilus pavucontrol alacritty brightnessctl
+    bluez network-manager network-manager-gnome gnome-control-center tmux pipewire-audio wireplumber
+    policykit-1 libnotify-bin
+    python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0 xsettingsd
 )
 
 # Instalando paquete lsb.deb local
@@ -157,6 +160,78 @@ for dir in "$RUTA"/Config/*; do
     echo "[OK] Configuracion de $name copiada."
 done
 
+# Build and install the Nautilus-only compact grid helper. It forces four
+# columns without changing GTK layout in any other application.
+if [ -f "$RUTA/Config/nautilus/compact-grid.c" ]; then
+    mkdir -p "$HOME/.local/lib/linux-personalization" "$HOME/.local/bin" \
+             "$HOME/.local/share/applications" "$HOME/.local/share/dbus-1/services"
+    cc -O2 -Wall -Wextra -shared -fPIC \
+        "$RUTA/Config/nautilus/compact-grid.c" -ldl \
+        -o "$HOME/.local/lib/linux-personalization/nautilus-compact-grid.so"
+    cp -v "$RUTA/Config/nautilus/nautilus-compact" "$HOME/.local/bin/"
+    chmod +x "$HOME/.local/bin/nautilus-compact"
+    cp -v "$RUTA/Config/nautilus/org.gnome.Nautilus.desktop" \
+        "$HOME/.local/share/applications/"
+    cp -v "$RUTA/Config/nautilus/org.gnome.Nautilus.service" \
+        "$HOME/.local/share/dbus-1/services/"
+    command -v update-desktop-database >/dev/null 2>&1 \
+        && update-desktop-database "$HOME/.local/share/applications" \
+        || true
+fi
+
+# Prefer Nautilus for folders and saved searches.
+xdg-mime default org.gnome.Nautilus.desktop inode/directory
+xdg-mime default org.gnome.Nautilus.desktop application/x-gnome-saved-search
+
+# Install a Win11 overlay that preserves the original VirtualBox and VMware
+# application icons supplied by their packages.
+HYPERVISOR_THEME_SOURCE="$RUTA/IconThemes/Win11-Hypervisors"
+HYPERVISOR_THEME_TARGET="$HOME/.local/share/icons/Win11-Hypervisors"
+WIN11_THEME_AVAILABLE=false
+for win11_theme in \
+        "$HOME/.local/share/icons/Win11/index.theme" \
+        "$HOME/.icons/Win11/index.theme" \
+        /usr/local/share/icons/Win11/index.theme \
+        /usr/share/icons/Win11/index.theme; do
+    if [ -f "$win11_theme" ]; then
+        WIN11_THEME_AVAILABLE=true
+        break
+    fi
+done
+if [ -f "$HYPERVISOR_THEME_SOURCE/index.theme" ]; then
+    mkdir -p "$HYPERVISOR_THEME_TARGET"
+    cp -f "$HYPERVISOR_THEME_SOURCE/index.theme" "$HYPERVISOR_THEME_TARGET/"
+    for size in 16 20 22 24 32 35 40 48 64 128 256; do
+        mkdir -p "$HYPERVISOR_THEME_TARGET/apps/$size"
+        for icon in virtualbox vmware-workstation vmware-player vmware-netcfg; do
+            source_icon="/usr/share/icons/hicolor/${size}x${size}/apps/$icon.png"
+            [ -f "$source_icon" ] \
+                && cp -f "$source_icon" "$HYPERVISOR_THEME_TARGET/apps/$size/"
+        done
+    done
+    mkdir -p "$HYPERVISOR_THEME_TARGET/apps/scalable"
+    [ -f /usr/share/icons/hicolor/scalable/apps/virtualbox.svg ] \
+        && cp -f /usr/share/icons/hicolor/scalable/apps/virtualbox.svg \
+            "$HYPERVISOR_THEME_TARGET/apps/scalable/"
+    command -v gtk-update-icon-cache >/dev/null 2>&1 \
+        && gtk-update-icon-cache -f "$HYPERVISOR_THEME_TARGET" \
+        || true
+fi
+
+# Use a balanced 64 px Nautilus grid and Win11 icons everywhere except for the
+# hypervisor applications overridden above.
+if command -v gsettings >/dev/null 2>&1; then
+    if [ "$WIN11_THEME_AVAILABLE" = true ]; then
+        gsettings set org.gnome.desktop.interface icon-theme 'Win11-Hypervisors'
+    else
+        echo "[WARN] El tema Win11 no está instalado; se conserva el tema actual."
+        echo "       Fuente: https://github.com/yeyushengfan258/Win11-icon-theme"
+    fi
+    gsettings set org.gnome.nautilus.icon-view default-zoom-level 'small-plus'
+    gsettings set org.gnome.nautilus.list-view default-zoom-level 'small'
+    gsettings set org.gnome.nautilus.preferences default-folder-viewer 'icon-view'
+fi
+
 
 
 # Caso especial Root (solo si existen)
@@ -242,5 +317,6 @@ sudo chsh -s /usr/bin/zsh root
 chmod +x ~/.config/bspwm/bspwmrc 2>/dev/null || true
 chmod +x ~/.config/bspwm/scripts/* 2>/dev/null || true
 chmod +x ~/.config/polybar/launch.sh 2>/dev/null || true
+find ~/.config/polybar/scripts -maxdepth 1 -type f -exec chmod +x {} \; 2>/dev/null || true
 
 echo -e "\n[INFO] Instalación completada. Reinicia para aplicar todos los cambios."

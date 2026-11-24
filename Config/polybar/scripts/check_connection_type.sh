@@ -1,47 +1,45 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Colores para los diferentes estados de la conexión
-WIRED_COLOR="#43A047"            # Verde para conexión por cable (Ethernet)
-WIFI_COLOR="#1E88E5"             # Azul para conexión por Wi-Fi
-NO_INTERNET_CONECTION="#F6CF59"  # Amarillo para cuando no hay conexión a Internet
-DISCONNECTED_COLOR="#757575"     # Gris para desconectado
+# NetworkManager is the source of truth. Unlike the old implementation, this
+# ignores Docker/VMware bridges and does not assume that public ICMP is allowed.
+set -u
 
-# Iconos para los diferentes estados de la conexión
-WIRED_ICON=""            # Icono para conexión por cable (Ethernet)
-WIFI_ICON=""             # Icono para conexión por Wi-Fi
-DISCONNECTED_ICON=""     # Icono para desconectado
+WIRED_COLOR="#43A047"
+WIFI_COLOR="#1E88E5"
+LIMITED_COLOR="#F6CF59"
+DISCONNECTED_COLOR="#757575"
 
-# Verificar el estado de la conexión con nmcli
-# nmcli lista los dispositivos de red y su estado.
-# grep filtra los dispositivos que están "connected".
-# awk filtra para excluir las interfaces loopback y obtiene el tipo de conexión.
-CONNECTION_TYPE=$(nmcli -t -f TYPE,STATE device | grep ":connected" | awk -F: '$1 != "loopback" {print $1}')
+# Material Design's cable glyph remains legible at the compact Polybar size.
+WIRED_ICON="󰌘"
+WIFI_ICON=""
+DISCONNECTED_ICON=""
 
-# Función para verificar la conexión a Internet
-# Argumentos:
-#   $1 - Color a usar para el icono si hay conexión a Internet
-#   $2 - Icono a mostrar
-check_internet_connection() {
-    # Realiza un ping a 8.8.8.8 (servidor DNS de Google) para verificar la conectividad a Internet
-    if ping -q -c 1 -W 1 8.8.8.8 > /dev/null; then
-        # Si hay conexión a Internet, muestra el icono con el color correspondiente
-        echo "%{F$1}$2%{F-}"
+if ! command -v nmcli >/dev/null 2>&1; then
+    printf '%%{F%s}%s%%{F-}\n' "$DISCONNECTED_COLOR" "$DISCONNECTED_ICON"
+    exit 0
+fi
+
+devices=$(LC_ALL=C nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null || true)
+wifi_device=$(printf '%s\n' "$devices" | awk -F: '$2 == "wifi" && $3 ~ /^connected/ {print $1; exit}')
+wired_device=$(printf '%s\n' "$devices" | awk -F: '$2 == "ethernet" && $3 ~ /^connected/ {print $1; exit}')
+connectivity=$(LC_ALL=C nmcli -t -f CONNECTIVITY general 2>/dev/null || printf 'unknown')
+
+color_for_connection() {
+    if [ "$connectivity" = "full" ]; then
+        printf '%s' "$1"
     else
-        # Si no hay conexión a Internet, muestra el icono en gris (sin conexión)
-        echo "%{F$NO_INTERNET_CONECTION}$2%{F-}"
+        printf '%s' "$LIMITED_COLOR"
     fi
 }
 
-# Comprobar el tipo de conexión y llamar a la función check_internet_connection con los parámetros adecuados
-if [ "$CONNECTION_TYPE" = "ethernet" ]; then
-    # Si la conexión es por cable (Ethernet), usa el color y el icono de Ethernet
-    check_internet_connection "$WIRED_COLOR" "$WIRED_ICON"
-elif [ "$CONNECTION_TYPE" = "wifi" ]; then
-    # Si la conexión es por Wi-Fi, usa el color y el icono de Wi-Fi
-    check_internet_connection "$WIFI_COLOR" "$WIFI_ICON"
+# Prefer the wired route when both adapters are connected: plugging in a cable
+# should immediately replace the Wi-Fi glyph with the Ethernet glyph.
+if [ -n "$wired_device" ]; then
+    color=$(color_for_connection "$WIRED_COLOR")
+    printf '%%{F%s}%s%%{F-}\n' "$color" "$WIRED_ICON"
+elif [ -n "$wifi_device" ]; then
+    color=$(color_for_connection "$WIFI_COLOR")
+    printf '%%{F%s}%s%%{F-}\n' "$color" "$WIFI_ICON"
 else
-    # Si no hay conexión (ni Ethernet ni Wi-Fi), muestra el icono de desconectado en amarillo
-    ICON_SELECTED=$DISCONNECTED_ICON
-    ICON_COLOR=$DISCONNECTED_COLOR
-    echo "%{F$ICON_COLOR}$ICON_SELECTED%{F-}"
+    printf '%%{F%s}%s%%{F-}\n' "$DISCONNECTED_COLOR" "$DISCONNECTED_ICON"
 fi

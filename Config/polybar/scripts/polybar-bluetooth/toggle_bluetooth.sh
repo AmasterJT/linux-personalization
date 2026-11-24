@@ -1,6 +1,7 @@
 #!/bin/sh
-if [ $(bluetoothctl show | grep "Powered: yes" | wc -c) -eq 0 ] then
-  bluetoothctl power on
-else
+
+if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
   bluetoothctl power off
+else
+  bluetoothctl power on
 fi

@@ -1,8 +1,6 @@
 [terminal.shell]
-#args = ['--login']
-#program = "/usr/bin/zsh"
-program = "/usr/bin/tmux"
-args = ["new-session"]
+program = "/bin/sh"
+args = ["-c", 'exec /bin/sh "${XDG_CONFIG_HOME:-$HOME/.config}/alacritty/tmux-session.sh"']
 
 [window]
 opacity = 0.95

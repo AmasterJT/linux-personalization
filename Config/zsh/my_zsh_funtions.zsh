@@ -244,3 +244,252 @@ function show_repo_info(){
     echo -e "${CYAN}Repository Status: ${WHITE}$repo_status"
 }
 
+
+#--------------------------------------------------------------------------------------------------
+# Función: check_vpn
+# Descripción: Detecta si WARP, Proton VPN o Nord VPN están activos y muestra la ubicación/región externa.
+# Uso: check_vpn
+#--------------------------------------------------------------------------------------------------
+check_vpn () {
+        local warp_status="off"
+        local proton_status="off"
+        local nord_status="off"
+
+        # 1. Cloudflare WARP
+        if command -v warp-cli &> /dev/null
+        then
+                if warp-cli status 2> /dev/null | grep -q "Connected"
+                then
+                        warp_status="on"
+                fi
+        fi
+
+        # 2. Proton VPN
+        if ip link show | grep -E "(pvpn|proton)" &> /dev/null
+        then
+                proton_status="on"
+        elif command -v protonvpn-cli &> /dev/null && protonvpn-cli status 2> /dev/null | grep -q "Status: Connected"
+        then
+                proton_status="on"
+        fi
+
+        # 3. NordVPN (CLI + interfaces nordlynx / nordtun)
+        if command -v nordvpn &> /dev/null && nordvpn status 2> /dev/null | grep -q "Status: Connected"
+        then
+                nord_status="on"
+        elif ip link show | grep -E "(nordlynx|nordtun)" &> /dev/null
+        then
+                nord_status="on"
+q        fi
+
+        echo -e "${BLUE}[+] Estado de los servicios VPN:${RESET}"
+        if [[ "$warp_status" == "on" ]]
+        then
+                echo -e "  ${CYAN}Cloudflare WARP:${RESET} ${GREEN}▲ ENCENDIDO${RESET}"
+        else
+                echo -e "  ${CYAN}Cloudflare WARP:${RESET} ${RED}▼ APAGADO${RESET}"
+        fi
+
+        if [[ "$proton_status" == "on" ]]
+        then
+                echo -e "  ${PURPLE}Proton VPN:${RESET}      ${GREEN}▲ ENCENDIDO${RESET}"
+        else
+                echo -e "  ${PURPLE}Proton VPN:${RESET}      ${RED}▼ APAGADO${RESET}"
+        fi
+
+        if [[ "$nord_status" == "on" ]]
+        then
+                echo -e "  ${BLUE}NordVPN:${RESET}         ${GREEN}▲ ENCENDIDO${RESET}"
+        else
+                echo -e "  ${BLUE}NordVPN:${RESET}         ${RED}▼ APAGADO${RESET}"
+        fi
+
+        echo -e "\n${BLUE}[+] Geolocalización de la IP de salida:${RESET}"
+        if command -v jq &> /dev/null
+        then
+                local location=$(curl -s --max-time 5 https://ifconfig.co/json | jq -r '"\(.country), \(.time_zone)"')
+                echo -e "  ${YELLOW}Ubicación:${RESET} ${WHITE}$location${RESET}\n"
+        else
+                local country=$(curl -s --max-time 5 https://ifconfig.co/country)
+                echo -e "  ${YELLOW}País:${RESET} ${WHITE}$country ${RED}(Instala 'jq' para ver la región/zona horaria)${RESET}\n"
+        fi
+}
+
+
+
+#--------------------------------------------------------------------------------------------------
+# Función: system_info
+# Descripción: Muestra una lista limpia y completa del software, hardware y red sin logotipos.
+# Uso: system_info [opciones_extra_fastfetch]
+#--------------------------------------------------------------------------------------------------
+function system_info(){
+    # Validar si el binario existe para evitar errores silenciosos o caídas del script
+    if ! command -v fastfetch &> /dev/null; then
+        local RED='\033[0;31m'
+        local RESET='\033[0m'
+        echo -e "${RED}[!] Error: 'fastfetch' no está instalado en el sistema.${RESET}"
+        return 1
+    fi
+
+    # Definir estructura fija de la lista limpia de manera organizada
+    local structure="Title:Separator:OS:Host:Kernel:Uptime:Packages:Shell:Display:DE:WM:WMTheme:Theme:Icons:Font:Cursor:Terminal:TerminalFont:CPU:GPU:Memory:Swap:Disk:LocalIp:Locale"
+
+    # Ejecutar fastfetch. Los "$@" permiten añadirle parámetros dinámicos sobre la marcha si lo deseas.
+    fastfetch -l none -s "$structure" "$@"
+}
+
+
+#--------------------------------------------------------------------------------------------------
+# Función: reboot_open_bios
+# Descripción: Reinicia el sistema y abre directamente la configuración de firmware BIOS/UEFI.
+# Uso: reboot_open_bios
+#--------------------------------------------------------------------------------------------------
+function reboot_open_bios(){
+    # Verificar si systemctl está disponible
+    if ! command -v systemctl &> /dev/null; then
+        echo -e "${RED}[!] Error: 'systemctl' no está disponible en este sistema.${RESET}"
+        return 1
+    fi
+
+    # Verificar si el sistema arrancó en modo UEFI
+    if [[ ! -d /sys/firmware/efi ]]; then
+        echo -e "${RED}[!] Error: este sistema no parece haber arrancado en modo UEFI.${RESET}"
+        echo -e "${YELLOW}[!] La opción '--firmware-setup' solo funciona con firmware UEFI.${RESET}"
+        return 1
+    fi
+
+    # Verificar si systemd permite reiniciar hacia la configuración del firmware
+    if ! systemctl reboot --help 2>/dev/null | grep -q -- '--firmware-setup'; then
+        echo -e "${RED}[!] Error: tu versión de systemctl no parece soportar '--firmware-setup'.${RESET}"
+        return 1
+    fi
+
+    # Confirmación compatible con Bash y Zsh
+    echo -e "${YELLOW}[!] El sistema se reiniciará y abrirá la configuración BIOS/UEFI.${RESET}"
+    printf "¿Quieres continuar? [s/N]: "
+    read confirmacion
+
+    case "$confirmacion" in
+        s|S|si|SI|sí|SÍ)
+            echo -e "${GREEN}[+] Reiniciando hacia BIOS/UEFI...${RESET}"
+            sleep 1
+
+            # Intentar sin sudo primero; si no hay permisos, usar sudo
+            if systemctl reboot --firmware-setup 2>/dev/null; then
+                return 0
+            else
+                sudo systemctl reboot --firmware-setup
+            fi
+            ;;
+        *)
+            echo -e "${CYAN}[+] Operación cancelada.${RESET}"
+            return 0
+            ;;
+    esac
+}
+
+
+#--------------------------------------------------------------------------------------------------
+# Función: sandbox
+# Descripción: Ejecuta una aplicación con Firejail en un directorio personal temporal.
+#              Firefox se abre en una instancia independiente y usa Firefox ESR si hace falta.
+# Uso: sandbox <aplicación> [argumentos...]
+#--------------------------------------------------------------------------------------------------
+function sandbox() {
+    if (( $# == 0 )); then
+        print -u2 -- 'Uso: sandbox <aplicación> [argumentos...]'
+        return 2
+    fi
+    if ! (( $+commands[firejail] )); then
+        print -u2 -- 'Falta Firejail. Instala: sudo apt install firejail firejail-profiles'
+        return 127
+    fi
+    local app="$1"
+    shift
+    if [[ "$app" == firefox ]] && ! (( $+commands[firefox] )) && (( $+commands[firefox-esr] )); then
+        app=firefox-esr
+    fi
+    case "${app:t}" in
+        firefox|firefox-esr)
+            command firejail --private "$app" --no-remote "$@"
+            ;;
+        *)
+            command firejail --private "$app" "$@"
+            ;;
+    esac
+}
+
+
+#--------------------------------------------------------------------------------------------------
+# Función: proteger-terminal
+# Descripción: Activa o desactiva la protección de la ventana enfocada frente al cierre
+#              normal de BSPWM (Super+W) y confirma el cambio en la terminal.
+# Uso: proteger-terminal {on|off|-h|--help}
+#--------------------------------------------------------------------------------------------------
+function proteger-terminal() {
+    if (( $# == 1 )) && [[ $1 == -h || $1 == --help ]]; then
+        print -r -- 'Uso: proteger-terminal {on|off}'
+        print -r -- '  on        Impide cerrar la ventana enfocada con Super+W.'
+        print -r -- '  off       Vuelve a permitir el cierre normal.'
+        print -r -- '  -h, --help  Muestra esta ayuda.'
+        print -r -- 'Ejecuta el comando desde la terminal que quieras proteger.'
+        return 0
+    fi
+
+    if (( $# != 1 )) || [[ $1 != on && $1 != off ]]; then
+        print -u2 -r -- 'Uso: proteger-terminal {on|off|--help}'
+        return 2
+    fi
+
+    if ! command -v bspc >/dev/null 2>&1; then
+        print -u2 -r -- 'No se encontró bspc. Este comando requiere BSPWM.'
+        return 1
+    fi
+
+    if ! command bspc node focused.window -g "locked=$1"; then
+        print -u2 -r -- 'No se pudo cambiar la protección. Comprueba que estés en BSPWM y haya una ventana enfocada.'
+        return 1
+    fi
+
+    if [[ $1 == on ]]; then
+        print -r -- 'Protección activada. Super+W no cerrará esta ventana.'
+    else
+        print -r -- 'Protección desactivada. Ya puedes cerrar esta ventana con Super+W.'
+    fi
+}
+
+
+#--------------------------------------------------------------------------------------------------
+# Función: proteger-pestana-tmux
+# Descripción: Activa o desactiva la protección del Zsh del panel actual de tmux
+#              frente a Ctrl+D en el prompt vacío y confirma el cambio.
+# Uso: proteger-pestana-tmux {on|off|-h|--help}
+#--------------------------------------------------------------------------------------------------
+function proteger-pestana-tmux() {
+    if (( $# == 1 )) && [[ $1 == -h || $1 == --help ]]; then
+        print -r -- 'Uso: proteger-pestana-tmux {on|off}'
+        print -r -- '  on          Protege el panel actual frente a Ctrl+D en el prompt vacío.'
+        print -r -- '  off         Restaura el comportamiento habitual de Ctrl+D.'
+        print -r -- '  -h, --help  Muestra esta ayuda.'
+        print -r -- 'Ejecuta el comando en cada panel de tmux que quieras proteger.'
+        return 0
+    fi
+
+    if (( $# != 1 )) || [[ $1 != on && $1 != off ]]; then
+        print -u2 -r -- 'Uso: proteger-pestana-tmux {on|off|--help}'
+        return 2
+    fi
+
+    if [[ -z ${TMUX:-} || -z ${TMUX_PANE:-} ]]; then
+        print -u2 -r -- 'Ejecuta este comando dentro de un panel de tmux.'
+        return 1
+    fi
+
+    if [[ $1 == on ]]; then
+        setopt IGNORE_EOF
+        print -r -- 'Protección activada en este panel de tmux.'
+    else
+        unsetopt IGNORE_EOF
+        print -r -- 'Protección desactivada en este panel de tmux.'
+    fi
+}

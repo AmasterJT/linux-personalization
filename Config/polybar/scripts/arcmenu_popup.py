@@ -17,7 +17,7 @@ gi.require_version("Gdk", "3.0")
 gi.require_version("Gio", "2.0")
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, present_at
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -601,12 +601,10 @@ def main() -> int:
     if lock is None:
         return 0
     window = ArcMenu()
-    window.show_all()
     display = Gdk.Display.get_default()
     monitor = display.get_primary_monitor()
     geometry = monitor.get_geometry()
-    window.move(geometry.x + 6, geometry.y + 48)
-    window.present()
+    present_at(window, geometry.x + 6, geometry.y + 48)
     GLib.idle_add(window.focus_search)
     Gtk.main()
     window.destroy()

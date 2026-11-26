@@ -17,7 +17,7 @@ gi.require_version("Pango", "1.0")
 gi.require_version("Gio", "2.0")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango  # noqa: E402
 
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, popup_size, present_at
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -822,16 +822,11 @@ def main() -> int:
     if lock is None:
         return 0
     window = WifiPopup()
-    window.show_all()
-    window.password_box.hide()
     display = Gdk.Display.get_default()
     monitor = display.get_primary_monitor()
     geometry = monitor.get_geometry()
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
-    width, _height = window.get_size()
-    window.move(geometry.x + geometry.width - width - 16, geometry.y + 48)
-    window.present()
+    width, _height = popup_size(window)
+    present_at(window, geometry.x + geometry.width - width - 16, geometry.y + 48)
     Gtk.main()
     window.password_entry.set_text("")
     window.destroy()

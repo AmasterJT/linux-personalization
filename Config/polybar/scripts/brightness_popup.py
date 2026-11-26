@@ -14,7 +14,7 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
 from brightness_control import backend, get_value, set_value
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, popup_size, present_at
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -103,9 +103,7 @@ class BrightnessPopup(Gtk.Window):
 
 
 def position(window: Gtk.Window, monitor: Gdk.Rectangle) -> tuple[int, int]:
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
-    width, height = window.get_size()
+    width, height = popup_size(window)
     try:
         ids = subprocess.check_output(
             ["xdotool", "search", "--name", "^polybar-systemConfig_"], text=True,
@@ -137,10 +135,8 @@ def main() -> int:
         return 0
     lock.seek(0); lock.truncate(); lock.write(str(os.getpid())); lock.flush()
     window = BrightnessPopup()
-    window.show_all()
     display = Gdk.Display.get_default()
-    window.move(*position(window, display.get_primary_monitor().get_geometry()))
-    window.present()
+    present_at(window, *position(window, display.get_primary_monitor().get_geometry()))
     Gtk.main()
     if window.timer is not None:
         GLib.source_remove(window.timer)

@@ -112,7 +112,9 @@ bspc rule -a Spotify desktop='^10' state=tiled follow=on
 bspc rule -a Pavucontrol: state=floating follow=on
 bspc rule -a org.gnome.Nautilus state=floating center=on rectangle=1200x820+0+0 follow=on
 bspc rule -a KeePassXC state=floating center=on rectangle=960x700+0+0 follow=on
-bspc rule -a BspwmSystemMonitor state=floating center=on layer=above sticky=on focus=on
+# Preserve the initial position supplied by GTK panels anchored to Polybar.
+bspc rule -a BspwmPolybarPopup state=floating center=off
+bspc rule -a BspwmSystemMonitor state=floating center=off layer=above sticky=on focus=on
 bspc rule -a BspwmBatteryAlert state=floating center=on layer=above sticky=on focus=on
 # VPN clients always use a compact floating window, regardless of whether they
 # were opened from Polybar, ArcMenu or another launcher.

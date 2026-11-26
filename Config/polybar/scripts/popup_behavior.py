@@ -11,6 +11,31 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
 
+def popup_size(window: Gtk.Window) -> tuple[int, int]:
+    """Measure the popup with its contents shown, while it is still unmapped."""
+    window.get_child().show_all()
+    minimum, natural = window.get_preferred_size()
+    default_width, default_height = window.get_default_size()
+    width = default_width if default_width > 0 else natural.width
+    height = default_height if default_height > 0 else natural.height
+    return max(minimum.width, width), max(minimum.height, height)
+
+
+def present_at(
+    window: Gtk.Window, x: int, y: int, wm_class: str = "BspwmPolybarPopup"
+) -> None:
+    """Give BSPWM the final X11 position before its first MapRequest."""
+    window.set_wmclass(GLib.get_prgname() or "polybar-popup", wm_class)
+    if not window.get_child().get_visible():
+        window.get_child().show_all()
+    window.move(x, y)
+    window.realize()
+    # Gtk.Window.move can defer its X11 ConfigureWindow until the first layout.
+    # Set the initial native geometry now so BSPWM cannot center it first.
+    window.get_window().move(x, y)
+    window.present()
+
+
 BUTTON_MASKS = (
     Gdk.ModifierType.BUTTON1_MASK
     | Gdk.ModifierType.BUTTON2_MASK

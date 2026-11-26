@@ -14,7 +14,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, Gtk  # noqa: E402
 
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, popup_size, present_at
 
 
 MONTHS = (
@@ -166,9 +166,7 @@ class CalendarPopup(Gtk.Window):
 
 def calendar_position(window: Gtk.Window, geometry: Gdk.Rectangle) -> tuple[int, int]:
     """Center the popup below the Polybar date window."""
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
-    popup_width, popup_height = window.get_size()
+    popup_width, popup_height = popup_size(window)
 
     try:
         window_ids = subprocess.check_output(
@@ -217,12 +215,10 @@ def main() -> int:
     lock.flush()
 
     window = CalendarPopup()
-    window.show_all()
     display = Gdk.Display.get_default()
     monitor = display.get_primary_monitor()
     geometry = monitor.get_geometry()
-    window.move(*calendar_position(window, geometry))
-    window.present()
+    present_at(window, *calendar_position(window, geometry))
     Gtk.main()
     window.destroy()
     return 0

@@ -15,7 +15,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, present_at
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -141,7 +141,6 @@ class MetricCard(Gtk.Box):
 class MonitorWindow(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
-        self.set_wmclass("bspwm-system-monitor", "BspwmSystemMonitor")
         self.set_title("Monitor del sistema")
         self.set_name("monitor-window")
         self.set_decorated(False)
@@ -249,13 +248,11 @@ def main() -> int:
     if lock is None:
         return 0
     window = MonitorWindow()
-    window.show_all()
     display = Gdk.Display.get_default()
     monitor = display.get_primary_monitor()
     geometry = monitor.get_geometry()
-    width, _height = window.get_size()
-    window.move(geometry.x + int(geometry.width * 0.60), geometry.y + 48)
-    window.present()
+    present_at(window, geometry.x + int(geometry.width * 0.60), geometry.y + 48,
+               wm_class="BspwmSystemMonitor")
     Gtk.main()
     return 0
 

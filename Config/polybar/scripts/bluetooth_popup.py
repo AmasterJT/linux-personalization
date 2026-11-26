@@ -15,7 +15,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, present_at
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -352,12 +352,10 @@ def main() -> int:
     if lock is None:
         return 0
     window = BluetoothPopup()
-    window.show_all()
     display = Gdk.Display.get_default()
     monitor = display.get_primary_monitor()
     geometry = monitor.get_geometry()
-    window.move(geometry.x + geometry.width - 436, geometry.y + 48)
-    window.present()
+    present_at(window, geometry.x + geometry.width - 436, geometry.y + 48)
     Gtk.main()
     window.close_scan()
     window.destroy()

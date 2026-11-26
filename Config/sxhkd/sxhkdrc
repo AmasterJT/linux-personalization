@@ -162,10 +162,10 @@ super + alt + Tab
 # Visual window switcher. Repeated Alt+Tab changes the highlighted preview;
 # releasing Alt, pressing Enter or clicking a preview activates it.
 alt + Tab
-    ~/.config/bspwm/scripts/window_switcher.py --alt-held
+    ~/.config/bspwm/scripts/window-switcher --alt-held
 
 alt + shift + Tab
-    ~/.config/bspwm/scripts/window_switcher.py --previous --alt-held
+    ~/.config/bspwm/scripts/window-switcher --previous --alt-held
 
 
 

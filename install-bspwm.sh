@@ -50,6 +50,7 @@ DEP_GENERALES=(
     libxcb-randr0-dev libxcb-icccm4-dev libxcb-keysyms1-dev
     libxcb-xinerama0-dev libasound2-dev libxcb-xtest0-dev libxcb-shape0-dev
     cmake cmake-data pkg-config python3-sphinx libcairo2-dev
+    libgtk-3-dev libwnck-3-dev libx11-dev libxcomposite-dev libxrender-dev
     libxcb1-dev libxcb-composite0-dev python3-xcbgen xcb-proto
     libxcb-image0-dev libxcb-xkb-dev libxcb-xrm-dev libxcb-cursor-dev
     libpulse-dev libjsoncpp-dev libmpdclient-dev libuv1-dev libnl-genl-3-dev
@@ -67,7 +68,7 @@ PAQUETES_ADICIONALES=(
     bspwm sxhkd xcape xss-lock upower imagemagick ranger caja nautilus pavucontrol alacritty brightnessctl
     bluez network-manager network-manager-gnome gnome-control-center tmux pipewire-audio wireplumber
     policykit-1 libnotify-bin
-    python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0 xsettingsd
+    python3-gi gir1.2-gtk-3.0 xsettingsd
 )
 
 # Instalando paquete lsb.deb local
@@ -159,6 +160,9 @@ for dir in "$RUTA"/Config/*; do
     cp -rv "$dir" ~/.config/
     echo "[OK] Configuracion de $name copiada."
 done
+
+run_step "Compilando el selector de ventanas BSPWM" \
+    sh "$RUTA/Config/bspwm/window-switcher/build.sh" "$HOME/.config/bspwm/scripts/window-switcher"
 
 # Build and install the Nautilus-only compact grid helper. It forces four
 # columns without changing GTK layout in any other application.

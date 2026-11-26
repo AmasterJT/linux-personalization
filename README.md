@@ -47,9 +47,25 @@ Script automatizado para configurar un entorno completo basado en **bspwm** en s
 ```bash
 git clone https://github.com/AmasterJT/linux-personalization.git
 cd linux-personalization
-chmod +x install.sh
-./install.sh
+bash install-bspwm.sh
 ```
+
+El instalador compila el selector de ventanas y el control de audio en C.
+El selector usa GTK 3 y X11. El panel de audio y su indicador usan la interfaz
+PulseAudio de PipeWire. Los binarios se generan en los directorios de scripts
+de BSPWM y Polybar.
+
+Para recompilar solo esos dos componentes en una instalación existente,
+con las dependencias de compilación ya instaladas, ejecuta:
+
+```bash
+sh Config/bspwm/window-switcher/build.sh
+sh Config/polybar/audio-control/build.sh
+```
+
+Si el control de audio ya estaba en ejecución, termina esa instancia con
+`~/.config/polybar/scripts/audio-control quit`. El siguiente clic en el icono
+de volumen o la siguiente pulsación de una tecla de volumen iniciará la nueva.
 
 ## 🙌 Créditos
 

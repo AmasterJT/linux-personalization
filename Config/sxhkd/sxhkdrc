@@ -34,16 +34,16 @@ XF86MonBrightnessUp
     ~/.config/polybar/scripts/osd_popup.py brightness change 5
 
 XF86AudioMute
-    ~/.config/polybar/scripts/osd_popup.py volume mute
+    ~/.config/polybar/scripts/audio-control volume mute
 
 XF86AudioLowerVolume
-    ~/.config/polybar/scripts/osd_popup.py volume change -5
+    ~/.config/polybar/scripts/audio-control volume change -5
 
 XF86AudioRaiseVolume
-    ~/.config/polybar/scripts/osd_popup.py volume change 5
+    ~/.config/polybar/scripts/audio-control volume change 5
 
 XF86AudioMicMute
-    ~/.config/polybar/scripts/osd_popup.py microphone mute
+    ~/.config/polybar/scripts/audio-control microphone mute
 
 XF86AudioPrev
     ~/.config/polybar/scripts/media_control.py previous

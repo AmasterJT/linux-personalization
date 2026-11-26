@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Transient volume/brightness OSD used by BSPWM multimedia keys."""
 
+from concurrent.futures import ThreadPoolExecutor
 import fcntl
 import json
 import os
 from pathlib import Path
 import sys
+import threading
 import time
 
 import gi
@@ -19,21 +21,34 @@ from audio_control import (
 )
 from brightness_control import get_value as get_brightness
 from brightness_control import set_value as set_brightness
+from volume_scroll import VolumeScroll
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
 LOCK_FILE = RUNTIME_DIR / "linux-personalization-osd.lock"
+ACTION_LOCK_FILE = RUNTIME_DIR / "linux-personalization-osd-action.lock"
 STATE_FILE = RUNTIME_DIR / "linux-personalization-osd.json"
 VISIBLE_SECONDS = 1.8
 
 CSS = b"""
 #osd-window { background: rgba(23,25,34,0.96); border: 1px solid rgba(255,255,255,0.10);
   border-radius: 15px; color: #f1f2f7; font-family: "Noto Sans"; }
+#osd-window.volume { background: #25262b; border-radius: 26px; }
 #osd-card { padding: 12px 16px; }
 #osd-icon { background: transparent; border: none; box-shadow: none; color: #f16e44;
   font: 18pt "Hack Nerd Font"; min-width: 50px; padding: 0 6px; }
 #osd-icon:hover { color: #ff8a63; background: rgba(255,255,255,0.07); border-radius: 20px; }
+#osd-window.volume #osd-icon { color: #f4f4f4; }
 #osd-icon.muted { color: #757575; }
+#osd-window.volume #osd-icon.muted { color: #898b91; }
+#volume-meter trough, #volume-meter progress { min-width: 1px; min-height: 6px; border: none; }
+#volume-meter trough { background: #41434a; }
+#volume-meter progress { background: #f4f4f4; }
+#volume-meter .normal trough, #volume-meter .normal progress { border-radius: 3px 0 0 3px; }
+#volume-meter .boost trough, #volume-meter .boost progress { border-radius: 0 3px 3px 0; }
+#volume-meter .boost progress { background: #e8404f; }
+#volume-meter.muted progress { background: #898b91; }
+#volume-divider { background: #a6a8af; min-width: 2px; min-height: 8px; }
 #osd-value { color: #c3c7d4; font-size: 9pt; font-weight: 700; min-width: 44px; }
 scale trough { min-height: 7px; border-radius: 4px; background: #343846; }
 scale highlight { min-height: 7px; border-radius: 4px; background: #f16e44; }
@@ -57,8 +72,8 @@ def perform_action(arguments: list[str]) -> dict[str, object]:
     section, action = arguments[0], arguments[1]
     if section == "volume":
         if action == "change" and len(arguments) == 3:
-            value = change_volume("@DEFAULT_AUDIO_SINK@", int(arguments[2]), DEFAULT_MAXIMUM)
-            _current, muted = volume_state("@DEFAULT_AUDIO_SINK@", DEFAULT_MAXIMUM)
+            change_volume("@DEFAULT_AUDIO_SINK@", int(arguments[2]), DEFAULT_MAXIMUM)
+            value, muted = volume_state("@DEFAULT_AUDIO_SINK@", DEFAULT_MAXIMUM)
         elif action == "mute":
             value, muted = toggle_mute("@DEFAULT_AUDIO_SINK@")
         else:
@@ -99,6 +114,66 @@ def perform_action(arguments: list[str]) -> dict[str, object]:
     raise ValueError("Acción OSD desconocida")
 
 
+def update_state(arguments: list[str]) -> None:
+    # Each key press reads and updates the current level. Serialize these
+    # operations so overlapping key repeats cannot overwrite one another.
+    RUNTIME_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with ACTION_LOCK_FILE.open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        write_state(perform_action(arguments))
+
+
+class VolumeMeter(Gtk.Grid):
+    ANIMATION_US = 120_000
+
+    def __init__(self) -> None:
+        super().__init__(column_homogeneous=True, valign=Gtk.Align.CENTER)
+        self.set_name("volume-meter")
+        self.get_accessible().set_name("Volumen")
+        self.normal = Gtk.ProgressBar()
+        self.normal.get_style_context().add_class("normal")
+        self.boost = Gtk.ProgressBar()
+        self.boost.get_style_context().add_class("boost")
+        divider = Gtk.Box(valign=Gtk.Align.CENTER)
+        divider.set_name("volume-divider")
+        boost_segment = Gtk.Box()
+        boost_segment.pack_start(divider, False, False, 0)
+        boost_segment.pack_start(self.boost, True, True, 0)
+        self.attach(self.normal, 0, 0, 2, 1)
+        self.attach(boost_segment, 2, 0, 1, 1)
+        self.displayed = self.target = self.start = 0.0
+        self.start_us = 0
+        self.tick_id = 0
+
+    def set_level(self, value: int, *, immediate: bool = False) -> None:
+        if immediate:
+            if self.tick_id:
+                self.remove_tick_callback(self.tick_id)
+                self.tick_id = 0
+            self.target = value
+            self._paint(value)
+        elif value != self.target:
+            self.start = self.displayed
+            self.target = value
+            self.start_us = GLib.get_monotonic_time()
+            if not self.tick_id:
+                self.tick_id = self.add_tick_callback(self._animate)
+
+    def _animate(self, _widget, clock: Gdk.FrameClock) -> bool:
+        progress = max(0.0, min(1.0, (clock.get_frame_time() - self.start_us) / self.ANIMATION_US))
+        eased = 1 - (1 - progress) ** 2
+        self._paint(self.start + (self.target - self.start) * eased)
+        if progress >= 1:
+            self.tick_id = 0
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
+    def _paint(self, value: float) -> None:
+        self.displayed = value
+        self.normal.set_fraction(min(value, 100) / 100)
+        self.boost.set_fraction(max(0.0, value - 100) / (DEFAULT_MAXIMUM - 100))
+
+
 class OSDWindow(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
@@ -107,6 +182,10 @@ class OSDWindow(Gtk.Window):
         self.pointer_inside = False
         self.section = ""
         self.muted = False
+        self.audio_read_pending = False
+        self.last_audio_read = 0.0
+        self.actions = ThreadPoolExecutor(max_workers=1)
+        self.scroll_write = None
         self.set_title("Controles BSPWM")
         self.set_name("osd-window")
         self.set_decorated(False)
@@ -118,6 +197,11 @@ class OSDWindow(Gtk.Window):
         self.set_focus_on_map(False)
         self.set_type_hint(Gdk.WindowTypeHint.NOTIFICATION)
         self.set_size_request(390, -1)
+        self.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
+        scroll = VolumeScroll(self._change_from_scroll)
+        self.connect("scroll-event", lambda widget, event: (
+            self.section == "volume" and scroll(widget, event)
+        ))
 
         screen = self.get_screen()
         visual = screen.get_rgba_visual()
@@ -148,12 +232,18 @@ class OSDWindow(Gtk.Window):
         self.scale.set_draw_value(False)
         self.scale.set_can_focus(False)
         self.scale.set_hexpand(True)
+        self.meter = VolumeMeter()
+        levels = Gtk.Stack()
+        levels.add_named(self.scale, "scale")
+        levels.add_named(self.meter, "volume")
+        levels.show_all()
+        self.levels = levels
         card.pack_start(self.icon, False, False, 0)
-        card.pack_start(self.scale, True, True, 0)
+        card.pack_start(levels, True, True, 0)
         card.pack_start(self.value_label, False, False, 0)
 
         self._read_state()
-        GLib.timeout_add(50, self._poll)
+        GLib.timeout_add(25, self._poll)
 
     def _read_state(self) -> None:
         try:
@@ -166,20 +256,36 @@ class OSDWindow(Gtk.Window):
         self.last_mtime = stat.st_mtime_ns
         value = int(state.get("value", 0))
         maximum = max(1, int(state.get("maximum", 100)))
-        self.section = str(state.get("section", ""))
-        self.muted = bool(state.get("muted", False))
-        self.icon_label.set_text(str(state.get("icon", "")))
-        for widget in (self.icon, self.scale):
+        section = str(state.get("section", ""))
+        section_changed = section != self.section
+        self.section = section
+        volume = section == "volume"
+        context = self.get_style_context()
+        if volume:
+            context.add_class("volume")
+        else:
+            context.remove_class("volume")
+        self.levels.set_visible_child_name("volume" if volume else "scale")
+        self.scale.set_range(0, maximum)
+        self._display_state(value, bool(state.get("muted", False)), str(state.get("icon", "")),
+                            immediate=section_changed)
+        self.icon.set_sensitive(section in {"volume", "microphone"})
+        self.deadline = time.monotonic() + VISIBLE_SECONDS
+
+    def _display_state(self, value: int, muted: bool, icon: str, *, immediate: bool = False) -> None:
+        self.muted = muted
+        self.icon_label.set_text(icon)
+        self.value_label.set_text(f"{value}%")
+        for widget in (self.icon, self.scale, self.meter):
             context = widget.get_style_context()
             if self.muted:
                 context.add_class("muted")
             else:
                 context.remove_class("muted")
-        self.icon.set_sensitive(self.section in {"volume", "microphone"})
-        self.value_label.set_text(f"{value}%")
-        self.scale.set_range(0, maximum)
-        self.scale.set_value(value)
-        self.deadline = time.monotonic() + VISIBLE_SECONDS
+        if self.section == "volume":
+            self.meter.set_level(value, immediate=immediate)
+        else:
+            self.scale.set_value(value)
 
     def _pointer_enter(self, *_args) -> bool:
         self.pointer_inside = True
@@ -193,40 +299,37 @@ class OSDWindow(Gtk.Window):
     def _toggle_from_icon(self, _widget, _event) -> bool:
         if self.section not in {"volume", "microphone"}:
             return False
-        target = "@DEFAULT_AUDIO_SINK@" if self.section == "volume" else "@DEFAULT_AUDIO_SOURCE@"
-        maximum = DEFAULT_MAXIMUM if self.section == "volume" else 100
-        value, muted = toggle_mute(target, maximum)
-        state = {
-            "section": self.section,
-            "icon": sink_icon(value, muted) if self.section == "volume" else source_icon(muted),
-            "value": value,
-            "maximum": maximum,
-            "muted": muted,
-        }
-        write_state(state)
-        self._read_state()
+        self.actions.submit(update_state, [self.section, "mute"])
         return True
+
+    def _change_from_scroll(self, delta: int) -> None:
+        self.deadline = time.monotonic() + VISIBLE_SECONDS
+        if self.scroll_write is None or self.scroll_write.done():
+            self.scroll_write = self.actions.submit(update_state, ["volume", "change", str(delta)])
+
+    def _read_audio(self, section: str, revision: int) -> None:
+        target = "@DEFAULT_AUDIO_SINK@" if section == "volume" else "@DEFAULT_AUDIO_SOURCE@"
+        maximum = DEFAULT_MAXIMUM if section == "volume" else 100
+        value, muted = volume_state(target, maximum)
+        GLib.idle_add(self._apply_audio, section, revision, value, muted)
+
+    def _apply_audio(self, section: str, revision: int, value: int, muted: bool) -> bool:
+        self.audio_read_pending = False
+        self._read_state()
+        if self.section == section and self.last_mtime == revision:
+            icon = sink_icon(value, muted) if section == "volume" else source_icon(muted)
+            self._display_state(value, muted, icon)
+        return GLib.SOURCE_REMOVE
 
     def _poll(self) -> bool:
         self._read_state()
-        if self.section in {"volume", "microphone"}:
-            target = "@DEFAULT_AUDIO_SINK@" if self.section == "volume" else "@DEFAULT_AUDIO_SOURCE@"
-            maximum = DEFAULT_MAXIMUM if self.section == "volume" else 100
-            value, muted = volume_state(target, maximum)
-            displayed = self.value_label.get_text() == f"{value}%"
-            if not displayed or muted != self.muted:
-                self.muted = muted
-                self.value_label.set_text(f"{value}%")
-                self.scale.set_value(value)
-                self.icon_label.set_text(
-                    sink_icon(value, muted) if self.section == "volume" else source_icon(muted)
-                )
-                for widget in (self.icon, self.scale):
-                    context = widget.get_style_context()
-                    if muted:
-                        context.add_class("muted")
-                    else:
-                        context.remove_class("muted")
+        now = time.monotonic()
+        if (self.section in {"volume", "microphone"} and not self.audio_read_pending
+                and now - self.last_audio_read >= 0.2):
+            self.last_audio_read = now
+            self.audio_read_pending = True
+            threading.Thread(target=self._read_audio, args=(self.section, self.last_mtime),
+                             daemon=True).start()
         try:
             pointer = Gdk.Display.get_default().get_default_seat().get_pointer()
             _screen, pointer_x, pointer_y = pointer.get_position()
@@ -261,12 +364,10 @@ def position(window: Gtk.Window) -> None:
 
 def main() -> int:
     try:
-        state = perform_action(sys.argv[1:])
+        update_state(sys.argv[1:])
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)
         return 2
-    write_state(state)
-
     lock = LOCK_FILE.open("a+")
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -283,6 +384,7 @@ def main() -> int:
     window.present()
     Gtk.main()
     window.destroy()
+    window.actions.shutdown()
     return 0
 
 

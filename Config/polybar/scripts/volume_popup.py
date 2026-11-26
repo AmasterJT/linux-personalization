@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """PipeWire audio panel for outputs, microphones and application streams."""
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 import fcntl
 import os
@@ -9,6 +10,7 @@ import shutil
 import signal
 import subprocess
 import threading
+import time
 
 import gi
 
@@ -18,7 +20,8 @@ gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, GLib, Gtk, Pango  # noqa: E402
 
 from audio_control import run_wpctl, set_volume_percent, sink_icon, source_icon, volume_state
-from popup_behavior import install_click_outside
+from popup_behavior import install_click_outside, popup_size, present_at
+from volume_scroll import VolumeScroll
 
 
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}"))
@@ -28,6 +31,7 @@ STREAM_PATTERN = re.compile(r"^ {8}(\d+)\.\s+(.+?)\s*$")
 OUTPUT_MAXIMUM = 150
 INPUT_MAXIMUM = 100
 STREAM_MAXIMUM = 150
+VOLUME_WRITE_INTERVAL_MS = 55
 
 CSS = b"""
 #volume-window { background-color: #171922; border: 1px solid rgba(255,255,255,0.07);
@@ -142,11 +146,24 @@ def stream_properties(node_id: int) -> dict[str, str]:
     return properties
 
 
+def volume_scale(maximum: int) -> Gtk.Scale:
+    scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, maximum, 1)
+    scale.set_draw_value(False)
+    scale.set_hexpand(True)
+    scale.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
+    scale.connect("scroll-event", VolumeScroll(lambda step: scale.set_value(scale.get_value() + step)))
+    return scale
+
+
 class VolumePopup(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.refreshing = False
         self.timers: dict[str, int] = {}
+        self.pending_volumes: dict[str, tuple[int, int]] = {}
+        self.volume_writes: dict[str, Future] = {}
+        self.volume_executor = ThreadPoolExecutor(max_workers=1)
+        self.last_volume_edit = float("-inf")
         self.stream_count = 0
         self.set_title("Audio BSPWM")
         self.set_name("volume-window")
@@ -240,9 +257,7 @@ class VolumePopup(Gtk.Window):
         mute.get_style_context().add_class("audio-toggle")
         mute.get_style_context().add_class("audio-icon")
         mute.get_style_context().add_class(icon_class)
-        scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, maximum, 1)
-        scale.set_draw_value(False)
-        scale.set_hexpand(True)
+        scale = volume_scale(maximum)
         value = Gtk.Label()
         value.get_style_context().add_class("value")
         row.pack_start(mute, False, False, 0)
@@ -285,7 +300,7 @@ class VolumePopup(Gtk.Window):
         source_name = str(active_source["description"]) if active_source else "sin micrófono"
         self.subtitle.set_text(f"{sink_name} · {source_name}")
         self.status.set_text(f"{len(sinks)} salidas · {len(sources)} entradas · {len(streams)} aplicaciones")
-        self.show_all()
+        self.get_child().show_all()
 
     def _fill_devices(self, box: Gtk.Box, devices, icon_text: str, active_text: str, callback) -> None:
         for child in box.get_children():
@@ -337,9 +352,7 @@ class VolumePopup(Gtk.Window):
             name.set_ellipsize(Pango.EllipsizeMode.END)
             name.set_size_request(105, -1)
             name.get_style_context().add_class("device-name")
-            scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, STREAM_MAXIMUM, 1)
-            scale.set_draw_value(False)
-            scale.set_hexpand(True)
+            scale = volume_scale(STREAM_MAXIMUM)
             scale.set_value(value)
             value_label = Gtk.Label(label=f"{value}%")
             value_label.get_style_context().add_class("value")
@@ -395,16 +408,27 @@ class VolumePopup(Gtk.Window):
             self._set_default_visual(target, value, button.get_active())
         if self.refreshing:
             return
-        old_timer = self.timers.pop(target, None)
-        if old_timer is not None:
-            GLib.source_remove(old_timer)
-        self.timers[target] = GLib.timeout_add(70, self._apply_volume, target, scale, maximum)
+        self.last_volume_edit = time.monotonic()
+        self.pending_volumes[target] = (value, maximum)
+        if target not in self.timers:
+            self.timers[target] = GLib.timeout_add(VOLUME_WRITE_INTERVAL_MS, self._apply_volume, target)
 
-    def _apply_volume(self, target: str, scale: Gtk.Scale, maximum: int) -> bool:
+    def _apply_volume(self, target: str) -> bool:
+        previous = self.volume_writes.get(target)
+        if previous is not None and not previous.done():
+            return GLib.SOURCE_CONTINUE
         self.timers.pop(target, None)
-        value = round(scale.get_value())
-        set_volume_percent(target, value, maximum)
-        return False
+        value, maximum = self.pending_volumes.pop(target)
+        self.last_volume_edit = time.monotonic()
+        self.volume_writes[target] = self.volume_executor.submit(set_volume_percent, target, value, maximum)
+        return GLib.SOURCE_REMOVE
+
+    def finish_volume_writes(self) -> None:
+        for timer in self.timers.values():
+            GLib.source_remove(timer)
+        for target, (value, maximum) in self.pending_volumes.items():
+            self.volume_executor.submit(set_volume_percent, target, value, maximum)
+        self.volume_executor.shutdown()
 
     def _mute_changed(self, button: Gtk.ToggleButton, target: str) -> None:
         if self.refreshing:
@@ -443,6 +467,10 @@ class VolumePopup(Gtk.Window):
                 context.remove_class("muted")
 
     def _sync_default_state(self) -> bool:
+        # PipeWire may still report the previous value while a user edit is in flight.
+        if (self.pending_volumes or any(not write.done() for write in self.volume_writes.values())
+                or time.monotonic() - self.last_volume_edit < 0.25):
+            return GLib.SOURCE_CONTINUE
         output_value, output_muted = volume_state("@DEFAULT_AUDIO_SINK@", OUTPUT_MAXIMUM)
         input_value, input_muted = volume_state("@DEFAULT_AUDIO_SOURCE@", INPUT_MAXIMUM)
         self.refreshing = True
@@ -485,9 +513,7 @@ class VolumePopup(Gtk.Window):
 
 
 def popup_position(window: Gtk.Window, monitor: Gdk.Rectangle) -> tuple[int, int]:
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
-    width, height = window.get_size()
+    width, height = popup_size(window)
     try:
         ids = subprocess.check_output(["xdotool", "search", "--name", "^polybar-systemConfig_"],
                                       text=True, stderr=subprocess.DEVNULL).splitlines()
@@ -524,14 +550,11 @@ def main() -> int:
     if lock is None:
         return 0
     window = VolumePopup()
-    window.show_all()
     display = Gdk.Display.get_default()
-    window.move(*popup_position(window, display.get_primary_monitor().get_geometry()))
-    window.present()
+    present_at(window, *popup_position(window, display.get_primary_monitor().get_geometry()))
     Gtk.main()
-    for timer in tuple(window.timers.values()):
-        GLib.source_remove(timer)
     window.destroy()
+    window.finish_volume_writes()
     return 0
 
 

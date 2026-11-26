@@ -163,6 +163,8 @@ done
 
 run_step "Compilando el selector de ventanas BSPWM" \
     sh "$RUTA/Config/bspwm/window-switcher/build.sh" "$HOME/.config/bspwm/scripts/window-switcher"
+run_step "Compilando el control de audio de Polybar" \
+    sh "$RUTA/Config/polybar/audio-control/build.sh" "$HOME/.config/polybar/scripts/audio-control"
 
 # Build and install the Nautilus-only compact grid helper. It forces four
 # columns without changing GTK layout in any other application.

@@ -280,7 +280,7 @@ check_vpn () {
         elif ip link show | grep -E "(nordlynx|nordtun)" &> /dev/null
         then
                 nord_status="on"
-q        fi
+        fi
 
         echo -e "${BLUE}[+] Estado de los servicios VPN:${RESET}"
         if [[ "$warp_status" == "on" ]]

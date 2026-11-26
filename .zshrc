@@ -151,36 +151,3 @@ if [[ "${desktop_session:l}" == *bspwm* ]]; then
     export QT_QPA_PLATFORMTHEME=gtk3
 fi
 unset desktop_session
-
-# Protege la ventana enfocada frente al cierre normal de BSPWM.
-function proteger-terminal() {
-    if (( $# == 1 )) && [[ $1 == -h || $1 == --help ]]; then
-        print -r -- 'Uso: proteger-terminal {on|off}'
-        print -r -- '  on        Impide cerrar la ventana enfocada con Super+W.'
-        print -r -- '  off       Vuelve a permitir el cierre normal.'
-        print -r -- '  -h, --help  Muestra esta ayuda.'
-        print -r -- 'Ejecuta el comando desde la terminal que quieras proteger.'
-        return 0
-    fi
-
-    if (( $# != 1 )) || [[ $1 != on && $1 != off ]]; then
-        print -u2 -r -- 'Uso: proteger-terminal {on|off|--help}'
-        return 2
-    fi
-
-    if ! command -v bspc >/dev/null 2>&1; then
-        print -u2 -r -- 'No se encontró bspc. Este comando requiere BSPWM.'
-        return 1
-    fi
-
-    if ! command bspc node focused.window -g "locked=$1"; then
-        print -u2 -r -- 'No se pudo cambiar la protección. Comprueba que estés en BSPWM y haya una ventana enfocada.'
-        return 1
-    fi
-
-    if [[ $1 == on ]]; then
-        print -r -- 'Protección activada. Super+W no cerrará esta ventana.'
-    else
-        print -r -- 'Protección desactivada. Ya puedes cerrar esta ventana con Super+W.'
-    fi
-}
